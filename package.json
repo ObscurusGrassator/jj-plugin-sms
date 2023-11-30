@@ -4,6 +4,6 @@
     "build": "npm i ; npx jjPluginBuild"
   },
   "devDependencies": {
-    "jjplugin": "^1.0.6"
+    "jjplugin": "^1.1.2"
   }
 }
