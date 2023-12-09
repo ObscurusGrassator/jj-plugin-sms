@@ -10,8 +10,10 @@ Pre deteilnejšiu dokumentáciu a typovanie (JSDoc), ktoré Vás pomôže správ
 ```js
 module.exports = addPlugin(
     {
-        // konfig pluginu - čím univerzálnejšie zvolíte názvy klúčov, tým bude menšia pravdepodobnosť obťažovania
-        //   použivateľa zadávaním duplicitných hodnôt naprieč ostatnými pluginmi ("facebook", "login", "password")
+        // Konfig pluginu - čím univerzálnejšie zvolíte názvy klúčov, tým bude menšia pravdepodobnosť obťažovania
+        //   použivateľa zadávaním duplicitných hodnôt naprieč ostatnými pluginmi ("facebook", "login", "password").
+        // Akékoľvek cillivé údaje (napr. heslá), si musia pluginy ukladať cez túto konfiguráciu,
+        //   a nesmú byť zasielané tretím stranám, a ak danú službu sami neponúkajú, tak ani samotným autorom pluginu.
         serviceName: {
             propertyWithoutValue: { type: 'string' },               // aplikácia vyzve používateľa na doplnenie hodnoty
             propertyWithValue: { type: 'boolean', value: false },   // prednastavená hodnota
@@ -58,7 +60,7 @@ module.exports = addPlugin(
 ### Umelé API pre webové služby prostredníctvom vášho JavaScriptu vo WebView
 [https://github.com/ObscurusGrassator/jjplugin-facebook-chat](https://github.com/ObscurusGrassator/jjplugin-facebook-chat)
 
-### Volanie background service mobilnej aplikácie pre spustenie logiky na konkrétnom mobilnom operačnom systéme
+### Volanie background service mobilnej aplikácie pre spustenie logiky v Androide
 [https://github.com/ObscurusGrassator/jjplugin-sms](https://github.com/ObscurusGrassator/jjplugin-sms)
 
 **Príklad komunikácia JavaScriptu pluginu s doinštalovanou Java background service mobilnou aplikáciou:**

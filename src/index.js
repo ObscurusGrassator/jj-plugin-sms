@@ -24,6 +24,12 @@ module.exports = addPlugin({
     os: { android: true /*, ios: true*/ },
     pluginFormatVersion: 1,
 }, {
+    moduleRequirementsFree: [{
+        name: 'JJPlugin SMS apk',
+        android: {
+            downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.0.0/JJPluginSMS_v1.0.0.apk'
+        }
+    }],
     scriptPerInterval: async ctx => {
         if (!ctx.config.sms.automatic.checkNewMessage.value) return;
 
@@ -42,7 +48,7 @@ module.exports = addPlugin({
             example: 'Písal mi niekto?',
             type: 'question',
             predicates: {multiple: [{verbs: [{baseWord: /(na|od)písať/}]}]},
-            objects: [{multiple: [{origWord: /niekto/}]}],
+            subjects: {multiple: [{origWord: /niekto/}]},
         }, {
             example: 'Mám nejaké nové správy?',
             type: 'question',
