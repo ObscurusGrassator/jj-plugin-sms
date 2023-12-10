@@ -29,7 +29,10 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
         "pluginFormatVersion": 1
     }, {
         "moduleRequirementsFree": [
-            { "name": "JJPlugin SMS apk" }
+            {
+                "name": "JJPlugin SMS apk",
+                "android": { "downloadUrl": "https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.0.0/JJPluginSMS_v1.0.0.apk" }
+            }
         ],
         "scriptPerInterval": async ctx => {
             if (!ctx.config.sms.automatic.checkNewMessage.value) return;
