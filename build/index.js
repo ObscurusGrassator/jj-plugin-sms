@@ -43,6 +43,7 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                 if (newMessages.length  >  1) return 'Máš nové SMS od ' + newMessages.map(a => (a.fullName || (/[a-z]/i.test(a.number) && a.number) || ('čísla: ' + readableNumber(a.number)))).join(', ').replace(/, ([^,]+)$/, ' a $1');
                 if (newMessages.length === 1) return 'Máš novú SMS od ' + (newMessages[0].fullName || (/[a-z]/i.test(newMessages[0].number) && newMessages[0].number) || ('čísla: ' + readableNumber(newMessages[0].number)));
             }
+            return '';
         }
     }, {
         "sentenceMemberRequirements": {
