@@ -1,6 +1,8 @@
 // @ts-ignore
 try { var { Linking } = require('react-native'); } catch (err) {}
 
+let lastNumbers = '';
+
 function readableNumber(/** @type { String } */ number) {
     return ('' + number).split('').reverse().join(' ').replace(/([^ ] [^ ] [^ ])/g, '$1 .').split('').reverse().join('');
 }
@@ -37,13 +39,16 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
         "scriptPerInterval": async ctx => {
             if (!ctx.config.sms.automatic.checkNewMessage.value) return;
     
-            const newMessages = Object.values((await sendRequest(ctx, 'getNewSMSs')));
+            const newMessages = await sendRequest(ctx, 'getNewSMSs');
+            const messages = Object.values(newMessages);
+            const numbers = JSON.stringify(Object.keys(newMessages));
     
-            if (newMessages && newMessages.length) {
-                if (newMessages.length  >  1) return 'Máš nové SMS od ' + newMessages.map(a => (a.fullName || (/[a-z]/i.test(a.number) && a.number) || ('čísla: ' + readableNumber(a.number)))).join(', ').replace(/, ([^,]+)$/, ' a $1');
-                if (newMessages.length === 1) return 'Máš novú SMS od ' + (newMessages[0].fullName || (/[a-z]/i.test(newMessages[0].number) && newMessages[0].number) || ('čísla: ' + readableNumber(newMessages[0].number)));
+            if (messages && messages.length && lastNumbers != numbers) {
+                lastNumbers = numbers;
+    
+                if (messages.length  >  1) return 'Máš nové SMS od ' + messages.map(a => (a.fullName || (/[a-z]/i.test(a.number) && a.number) || ('čísla: ' + readableNumber(a.number)))).join(', ').replace(/, ([^,]+)$/, ' a $1');
+                if (messages.length === 1) return 'Máš novú SMS od ' + (messages[0].fullName || (/[a-z]/i.test(messages[0].number) && messages[0].number) || ('čísla: ' + readableNumber(messages[0].number)));
             }
-            return '';
         }
     }, {
         "sentenceMemberRequirements": {
