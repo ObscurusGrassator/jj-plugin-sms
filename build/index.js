@@ -60,14 +60,65 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                         "multiple": [
                             {
                                 "verbs": [
-                                    { "baseWord": /(na|od)písať/ }
+                                    {
+                                        "baseWord": /(na|od)písať/
+                                    }
                                 ]
                             }
                         ]
                     },
                     "subjects": {
                         "multiple": [
-                            { "origWord": /niekto/ }
+                            {
+                                "origWord": /niekto/,
+                                "propName": { "niekto": "optional" }
+                            }
+                        ]
+                    },
+                    "objects": [
+                        {
+                            "multiple": [
+                                {
+                                    "origWord": [
+                                        /správu/,
+                                        /sms/
+                                    ],
+                                    "propName": { "správu": "optional" },
+                                    "attributes": [
+                                        {
+                                            "baseWord": /nový/,
+                                            "propName": { "novú": "optional" }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }, {
+                    "example": "Prišla mi nová správa?",
+                    "type": "question",
+                    "predicates": {
+                        "multiple": [
+                            {
+                                "verbs": [
+                                    {
+                                        "baseWord": /prísť/
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "subjects": {
+                        "multiple": [
+                            {
+                                "origWord": /správa/,
+                                "attributes": [
+                                    {
+                                        "baseWord": /nový/,
+                                        "propName": { "novú": "optional" }
+                                    }
+                                ]
+                            }
                         ]
                     }
                 }, {
@@ -77,7 +128,9 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                         "multiple": [
                             {
                                 "verbs": [
-                                    { "baseWord": /mať|prísť/ }
+                                    {
+                                        "baseWord": /mať/
+                                    }
                                 ]
                             }
                         ]
@@ -86,9 +139,18 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                         {
                             "multiple": [
                                 {
-                                    "baseWord": [
-                                        /správa/,
+                                    "origWord": [
+                                        /správu/,
                                         /sms/
+                                    ],
+                                    "attributes": [
+                                        {
+                                            "baseWord": /nový/,
+                                            "propName": { "nový": "optional" }
+                                        }, {
+                                            "baseWord": /nejaký|dajaký/,
+                                            "propName": { "nejaký": "optional" }
+                                        }
                                     ]
                                 }
                             ]
@@ -114,7 +176,9 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                         "multiple": [
                             {
                                 "verbs": [
-                                    { "baseWord": /prečítať/ }
+                                    {
+                                        "baseWord": /prečítať/
+                                    }
                                 ]
                             }
                         ]
@@ -125,8 +189,16 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                                 {
                                     "origWord": [
                                         /správy/,
-                                        /ich/,
                                         /sms/
+                                    ],
+                                    "attributes": [
+                                        {
+                                            "baseWord": /nový/,
+                                            "propName": { "nový": "optional" }
+                                        }, {
+                                            "baseWord": /všetky/,
+                                            "propName": { "všetky": "optional" }
+                                        }
                                     ]
                                 }
                             ]
@@ -162,22 +234,25 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
             "subjects": {
                 "multiple": [
                     {
-                        "propName": { "friend": "required" }
+                        "origWord": /.*/
                     }
-                ]
+                ],
+                "propName": { "friend": "required" }
             },
             "objects": [
                 {
                     "multiple": [
-                        { "origWord": /čo/ }
+                        {
+                            "origWord": /čo/
+                        }
                     ]
                 }
             ]
         }
     },
     async ctx => {
-        const contact = await sendRequest(ctx, 'getContactByName', {name: ctx.propName.friend.baseWord});
-        if (!contact?.fullName) return `${ctx.propName.friend.baseWord} som v kontaktoch nenašiel.`;
+        const contact = await sendRequest(ctx, 'getContactByName', {name: ctx.propName.friend.multiple[0].baseWord});
+        if (!contact?.fullName) return `${ctx.propName.friend.multiple[0].baseWord} som v kontaktoch nenašiel.`;
     
         const newMessages = Object.values((await sendRequest(ctx, 'getNewSMSs', {faddress: contact.number, setAsRread: true})));
         const sms = newMessages.find(sms => sms.fullName);
@@ -186,7 +261,7 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
         else return `${contact.fullName} píše, ${sms.messages.join(', ')}`;
     }, {
         "sentenceMemberRequirements": {
-            "example": "Napíš správu pre <object> citujem ... koniec citácie!",
+            "example": "Napíš správu <object> citujem ... koniec citácie!",
             "type": "command",
             "predicates": {
                 "multiple": [
@@ -202,31 +277,60 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                     }
                 ]
             },
-            "objects": [
-                {
-                    "multiple": [
+            "objects": {
+                "_or": [
+                    [
                         {
-                            "origWord": [
-                                /správu/,
-                                /sms(ku)?/
-                            ]
-                        }
-                    ]
-                }, {
-                    "multiple": [
-                        {
-                            "_or": [
+                            "multiple": [
                                 {
-                                    "case": { "key": "3" }
-                                }, {
-                                    "preposition": { "origWord": "pre" }
+                                    "origWord": [
+                                        /správu/,
+                                        /sms(ku)?/
+                                    ],
+                                    "propName": { "správu": "optional" },
+                                    "attributes": [
+                                        {
+                                            "baseWord": /nový/,
+                                            "propName": { "nový": "optional" }
+                                        }
+                                    ]
                                 }
                             ]
+                        }, {
+                            "multiple": [
+                                {
+                                    "case": { "key": "3" }
+                                }
+                            ],
+                            "propName": { "friend": "required" }
                         }
-                    ],
-                    "propName": { "friend": "required" }
-                }
-            ]
+                    ], [
+                        {
+                            "multiple": [
+                                {
+                                    "origWord": [
+                                        /správu/,
+                                        /sms(ku)?/
+                                    ],
+                                    "attributes": [
+                                        {
+                                            "baseWord": /nový/,
+                                            "propName": { "nový": "optional" }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }, {
+                            "multiple": [
+                                {
+                                    "preposition": { "origWord": "pre" }
+                                }
+                            ],
+                            "propName": { "friend": "required" }
+                        }
+                    ]
+                ]
+            }
         }
     },
     async ctx => {

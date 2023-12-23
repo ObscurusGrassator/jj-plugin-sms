@@ -54,12 +54,22 @@ module.exports = addPlugin({
             example: 'Písal mi niekto?',
             type: 'question',
             predicates: {multiple: [{verbs: [{baseWord: /(na|od)písať/}]}]},
-            subjects: {multiple: [{origWord: /niekto/}]},
+            subjects: {multiple: [{origWord: /niekto/, propName: {'niekto': 'optional'}}]},
+            objects: [{multiple: [{origWord: [/správu/, /sms/], propName: {'správu': 'optional'},
+                attributes: [{baseWord: /nový/, propName: {'novú': 'optional'}}]}]}],
+        }, {
+            example: 'Prišla mi nová správa?',
+            type: 'question',
+            predicates: {multiple: [{verbs: [{baseWord: /prísť/}]}]},
+            subjects: {multiple: [{origWord: /správa/, attributes: [{baseWord: /nový/, propName: {'novú': 'optional'}}]}]},
         }, {
             example: 'Mám nejaké nové správy?',
             type: 'question',
-            predicates: {multiple: [{verbs: [{baseWord: /mať|prísť/}]}]},
-            objects: [{multiple: [{baseWord: [/správa/, /sms/]}]}],
+            predicates: {multiple: [{verbs: [{baseWord: /mať/}]}]},
+            objects: [{multiple: [{origWord: [/správu/, /sms/], attributes: [
+                {baseWord: /nový/, propName: {'nový': 'optional'}},
+                {baseWord: /nejaký|dajaký/, propName: {'nejaký': 'optional'}},
+            ]}]}],
         }]
     },
 }, async ctx => {
@@ -76,7 +86,10 @@ module.exports = addPlugin({
             example: 'Prečítaj mi nové správy!',
             type: 'command',
             predicates: {multiple: [{verbs: [{baseWord: /prečítať/}]}]},
-            objects: [{multiple: [{origWord: [/správy/, /ich/, /sms/]}]}],
+            objects: [{multiple: [{origWord: [/správy/, /sms/], attributes: [
+                {baseWord: /nový/, propName: {'nový': 'optional'}},
+                {baseWord: /všetky/, propName: {'všetky': 'optional'}},
+            ]}]}],
         }]
     },
 }, async ctx => {
@@ -94,12 +107,12 @@ module.exports = addPlugin({
         example: 'Čo mi píše <subject>?',
         type: 'question',
         predicates: {multiple: [{verbs: [{baseWord: [/(na|od)písať/]}]}]},
-        subjects: {multiple: [{propName: {friend: 'required'}}]},
+        subjects: {multiple: [{origWord: /.*/}], propName: {friend: 'required'}},
         objects: [{multiple: [{origWord: /čo/}]}],
     },
 }, async ctx => {
-    const contact = await sendRequest(ctx, 'getContactByName', {name: ctx.propName.friend.baseWord});
-    if (!contact?.fullName) return `${ctx.propName.friend.baseWord} som v kontaktoch nenašiel.`;
+    const contact = await sendRequest(ctx, 'getContactByName', {name: ctx.propName.friend.multiple[0].baseWord});
+    if (!contact?.fullName) return `${ctx.propName.friend.multiple[0].baseWord} som v kontaktoch nenašiel.`;
 
     const newMessages = Object.values((await sendRequest(ctx, 'getNewSMSs', {faddress: contact.number, setAsRread: true})));
     const sms = newMessages.find(sms => sms.fullName);
@@ -109,21 +122,20 @@ module.exports = addPlugin({
 },
 
 {
-    sentenceMemberRequirementStrings: [
-        'Napíš<odpísať|(od|p)oslať> správu<sms> Adamovi<.+> !',
-        'Napíš<odpísať|(od|p)oslať> správu<sms> pre Adama<.+> !'
-    ],
     sentenceMemberRequirements: {
-        example: 'Napíš správu pre <object> citujem ... koniec citácie!',
+        example: 'Napíš správu <object> citujem ... koniec citácie!',
         type: 'command',
         predicates: {multiple: [{verbs: [ {baseWord: [/(na|od)písať/, /(od|p)oslať/]} ]}]},
-        objects: [
-            {multiple: [{origWord: [/správu/, /sms(ku)?/]}]},
-            {multiple: [{_or: [
-                {case: {/* value: 'datív', */ key: '3'}},
-                {preposition: {origWord: 'pre'}},
-            ]}], propName: {friend: 'required'}},
-        ],
+        objects: {
+            _or: [[
+                {multiple: [{origWord: [/správu/, /sms(ku)?/], propName: {'správu': 'optional'},
+                            attributes: [{baseWord: /nový/, propName: {'nový': 'optional'}}]}]},
+                {multiple: [{case: {/* value: 'datív', */ key: '3'}}], propName: {friend: 'required'}},
+            ], [
+                {multiple: [{origWord: [/správu/, /sms(ku)?/], attributes: [{baseWord: /nový/, propName: {'nový': 'optional'}}]}]},
+                {multiple: [{preposition: {origWord: 'pre'}}], propName: {friend: 'required'}},
+            ]]
+        }
     },
 }, async ctx => {
     let friends = ctx.propName.friend.multiple.map(f => f.baseWord);

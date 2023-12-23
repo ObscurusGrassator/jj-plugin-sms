@@ -55,6 +55,8 @@ module.exports = addPlugin(
 └----------------------> (voliteľné) Dané slovo môže, ale aj nemusí existovať.
 ```
 
+DevDependency package `jjplugin` cez príkaz `npx jjPluginBuild` skompiluje `sentenceMemberRequirementStrings` do `sentenceMemberRequirements` a vytvorí `index.js` pre mobilnú aplikáciu.
+
 ## Ukážkové pluginy
 
 ### Umelé API pre webové služby prostredníctvom vášho JavaScriptu vo WebView
