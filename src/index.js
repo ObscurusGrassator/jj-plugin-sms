@@ -55,18 +55,18 @@ module.exports = addPlugin({
             type: 'question',
             predicates: {multiple: [{verbs: [{baseWord: /(na|od)písať/}]}]},
             subjects: {multiple: [{origWord: /niekto/, propName: {'niekto': 'optional'}}]},
-            objects: [{multiple: [{origWord: [/správu/, /sms/], propName: {'správu': 'optional'},
+            objects: [{multiple: [{origWord: [/správ[uy]/, /sms(ky)?/], propName: {'správu': 'optional'},
                 attributes: [{baseWord: /nový/, propName: {'novú': 'optional'}}]}]}],
         }, {
             example: 'Prišla mi nová správa?',
             type: 'question',
             predicates: {multiple: [{verbs: [{baseWord: /prísť/}]}]},
-            subjects: {multiple: [{origWord: /správa/, attributes: [{baseWord: /nový/, propName: {'novú': 'optional'}}]}]},
+            subjects: {multiple: [{origWord: [/správ[uy]/, /sms(ky)?/], attributes: [{baseWord: /nový/, propName: {'novú': 'optional'}}]}]},
         }, {
             example: 'Mám nejaké nové správy?',
             type: 'question',
             predicates: {multiple: [{verbs: [{baseWord: /mať/}]}]},
-            objects: [{multiple: [{origWord: [/správu/, /sms/], attributes: [
+            objects: [{multiple: [{origWord: [/správ[uy]/, /sms(ky)?/], attributes: [
                 {baseWord: /nový/, propName: {'nový': 'optional'}},
                 {baseWord: /nejaký|dajaký/, propName: {'nejaký': 'optional'}},
             ]}]}],
@@ -86,7 +86,7 @@ module.exports = addPlugin({
             example: 'Prečítaj mi nové správy!',
             type: 'command',
             predicates: {multiple: [{verbs: [{baseWord: /prečítať/}]}]},
-            objects: [{multiple: [{origWord: [/správy/, /sms/], attributes: [
+            objects: [{multiple: [{origWord: [/správ[uy]/, /sms(ky)?/], attributes: [
                 {baseWord: /nový/, propName: {'nový': 'optional'}},
                 {baseWord: /všetky/, propName: {'všetky': 'optional'}},
             ]}]}],

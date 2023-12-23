@@ -80,8 +80,8 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                             "multiple": [
                                 {
                                     "origWord": [
-                                        /správu/,
-                                        /sms/
+                                        /správ[uy]/,
+                                        /sms(ky)?/
                                     ],
                                     "propName": { "správu": "optional" },
                                     "attributes": [
@@ -111,7 +111,10 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                     "subjects": {
                         "multiple": [
                             {
-                                "origWord": /správa/,
+                                "origWord": [
+                                    /správ[uy]/,
+                                    /sms(ky)?/
+                                ],
                                 "attributes": [
                                     {
                                         "baseWord": /nový/,
@@ -140,8 +143,8 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                             "multiple": [
                                 {
                                     "origWord": [
-                                        /správu/,
-                                        /sms/
+                                        /správ[uy]/,
+                                        /sms(ky)?/
                                     ],
                                     "attributes": [
                                         {
@@ -188,8 +191,8 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                             "multiple": [
                                 {
                                     "origWord": [
-                                        /správy/,
-                                        /sms/
+                                        /správ[uy]/,
+                                        /sms(ky)?/
                                     ],
                                     "attributes": [
                                         {
