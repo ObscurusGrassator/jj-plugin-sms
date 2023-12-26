@@ -57,6 +57,8 @@ module.exports = addPlugin(
 
 DevDependency package `jjplugin` cez príkaz `npx jjPluginBuild` skompiluje `sentenceMemberRequirementStrings` do `sentenceMemberRequirements` a vytvorí `index.js` pre mobilnú aplikáciu.
 
+**POZOR:** Cudzie slova nemusia existovať v slovníku, a teda nebudú obsahovať gramatické kategórie (baseWord, case, number, ...). Pri takýchto slovách pracujete ideálne len s vlastnosťou `origWord`, a prípadné suffixi skloňovania uvedťe napr. cez regulárny výraz.
+
 ## Ukážkové pluginy
 
 ### Umelé API pre webové služby prostredníctvom vášho JavaScriptu vo WebView
