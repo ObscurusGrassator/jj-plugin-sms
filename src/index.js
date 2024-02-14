@@ -29,7 +29,7 @@ module.exports = addPlugin({
     moduleRequirementsFree: [{
         name: 'JJPlugin SMS apk',
         android: {
-            downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.0.0/JJPluginSMS_v1.0.0.apk'
+            downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.0.0/JJPluginSMS_v1.1.0.apk'
         }
     }],
     scriptPerInterval: async ctx => {

@@ -55,9 +55,11 @@ module.exports = addPlugin(
 └----------------------> (voliteľné) Dané slovo môže, ale aj nemusí existovať.
 ```
 
-DevDependency package `jjplugin` cez príkaz `npx jjPluginBuild` skompiluje `sentenceMemberRequirementStrings` do `sentenceMemberRequirements` a vytvorí `index.js` pre mobilnú aplikáciu.
+Do sentenceMemberRequirementStrings / sentenceMemberRequirements konštrukcie je nutné zapracovať čo najviac možných rôznich viet alebo vetných členov a ich rôznich prívlastkov, ktorými používateľ môže vyvolať požadovanú operáciu, hoci bude väčšina z členov nepovinných, resp. nemusia ovplivňovať konečný výsledok. Pretože stačí jediné nadbitočné slovíčko, ktoré celú myšlienku zmený. Poznámka: Číslo vetného člena (jednotné/množné) výsledok neovplivňuje.
 
 **POZOR:** Cudzie slova nemusia existovať v slovníku, a teda nebudú obsahovať gramatické kategórie (baseWord, case, number, ...). Pri takýchto slovách pracujete ideálne len s vlastnosťou `origWord`, a prípadné suffixi skloňovania uvedťe napr. cez regulárny výraz.
+
+DevDependency package `jjplugin` cez príkaz `npx jjPluginBuild` skompiluje `sentenceMemberRequirementStrings` do `sentenceMemberRequirements` a vytvorí `index.js` pre mobilnú aplikáciu.
 
 ## Ukážkové pluginy
 
@@ -79,14 +81,21 @@ import android.content.ComponentName;
 
 public class JJPluginSMSService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
+
+        // ... result/error inserting
+
         Bundle extras = intent.getExtras();
-        Intent intent = new Intent();
-        intent.setComponent(new ComponentName(extras.getString("parentAppID"), extras.getString("parentPackageID")));
+        Intent intent = new Intent(extras.getString("intentFilterBroadcastString"));
 
         intent.putExtra("requestID", extras.getString("requestID"));
         if (error == null)
-                intent.putExtra("result", result);
+             intent.putExtra("result", result);
         else intent.putExtra("error", error);
+
+        sendBroadcast(intent);
+        onDestroy();
+        stopSelf();
+    }
 ```
 
 #### Ostatné nevyhnutné úpravy

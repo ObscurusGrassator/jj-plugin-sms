@@ -67,8 +67,7 @@ public class JJPluginSMSService extends Service {
         // https://stackoverflow.com/questions/5265913/how-to-use-putextra-and-getextra-for-string-data
         Bundle extras = intent.getExtras();
         if (extras != null) {
-            String parentAppID = extras.getString("parentAppID");
-            String parentPackageID = extras.getString("parentPackageID");
+            String intentFilterBroadcastString = extras.getString("intentFilterBroadcastString");
 
             requestID = extras.getString("requestID");
             if (requestID.equals(requestIDLast)) {
@@ -86,10 +85,9 @@ public class JJPluginSMSService extends Service {
             }
 
             String msg0 = "~=PluginResult binding failed";
-            String msg = "parentAppID: " + parentAppID + "; parentPackageID: " + parentPackageID + "; ";
+            String msg = "intentFilterBroadcastString: " + intentFilterBroadcastString + "; ";
             try {
-                Intent intent2 = new Intent();
-                intent2.setComponent(new ComponentName(parentAppID, parentPackageID));
+                Intent intent2 = new Intent(intentFilterBroadcastString);
 
                 Log.d("~= jjPluginSMS", "method executing...");
                 Functions.Result result = functions.run(serviceMethod, input);
@@ -101,8 +99,7 @@ public class JJPluginSMSService extends Service {
                 else
                     intent2.putExtra("error", result.error);
 
-                startForegroundService(intent2);
-                // startService(intent2);
+                sendBroadcast(intent2);
 
                 onDestroy();
                 stopSelf();
