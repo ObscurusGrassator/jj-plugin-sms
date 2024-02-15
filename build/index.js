@@ -33,7 +33,10 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
         "moduleRequirementsFree": [
             {
                 "name": "JJPlugin SMS apk",
-                "android": { "downloadUrl": "https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.1.0/JJPluginSMS_v1.1.0.apk" }
+                "android": {
+                    "packageName": "jjplugin.obsgrass.sms",
+                    "downloadUrl": "https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.1.0/JJPluginSMS_v1.1.0.apk"
+                }
             }
         ],
         "scriptPerInterval": async ctx => {
