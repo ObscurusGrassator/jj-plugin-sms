@@ -13,7 +13,7 @@ function readableNumber(/** @type { String } */ number) {
  * @param {{[key: string]: any}} [params] Options
  */
 async function sendRequest(ctx, method, params = {}) {
-    return ctx.mobileAppOpen('jjplugin.obsgrass.sms', 'JJPluginSMSService', [["serviceMethod", method], ["input", JSON.stringify(params)]]);
+    return ctx.mobileAppOpen('jjplugin.obsgrass.sms', 'MainActivity', [["serviceMethod", method], ["input", JSON.stringify(params)]]);
 }
 
 module.exports = addPlugin({
@@ -30,7 +30,7 @@ module.exports = addPlugin({
         name: 'JJPlugin SMS apk',
         android: {
             packageName: 'jjplugin.obsgrass.sms',
-            downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.1.0/JJPluginSMS_v1.1.0.apk'
+            downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.2.0/JJPluginSMS_v1.2.0.apk'
         }
     }],
     scriptPerInterval: async ctx => {
