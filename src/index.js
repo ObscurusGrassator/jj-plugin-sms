@@ -13,13 +13,13 @@ function readableNumber(/** @type { String } */ number) {
  * @param {{[key: string]: any}} [params] Options
  */
 async function sendRequest(ctx, method, params = {}) {
-    return ctx.mobileAppOpen('jjplugin.obsgrass.sms', 'MainActivity', [["serviceMethod", method], ["input", JSON.stringify(params)]]);
+    return ctx.mobileAppOpen('jjplugin.obsgrass.sms', 'JJPluginSMSService', 'MainActivity', [["serviceMethod", method], ["input", JSON.stringify(params)]]);
 }
 
 module.exports = addPlugin({
     sms: {
         automatic: {
-            checkNewMessage: {type: 'boolean', value: true},
+            checkNewMessage: {type: 'boolean', value: false},
         },
     },
 }, {
