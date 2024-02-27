@@ -71,9 +71,10 @@ DevDependency package `jjplugin` cez príkaz `npx jjPluginBuild` skompiluje `sen
 
 **Príklad komunikácia JavaScriptu pluginu s doinštalovanou Java background service mobilnou aplikáciou:**
 ```js
-ctx.mobileAppOpen('jjplugin.obsgrass.sms', 'JJPluginSMSService', [["paramA", paramA], ["paramB", paramB]]);
+ctx.mobileAppOpen('jjplugin.obsgrass.sms', 'JJPluginSMSService', 'MainActivity', [["paramA", paramA], ["paramB", paramB]]);
 ```
-Do service môžete odoslať cez dvojrozmerné pole ľubovolné argumenty. Okrem nich sa odosielajú aj argumenty "parentAppID", "parentPackageID" a jedinečné "requestID", vďaka ktorému sa správne spáruje intent odpoveď, ktorá musí obsahovať "requestID" a "result" alebo "error":
+Ak aplikácia vyžaduje na svoj beh nejaké permissions, vytvorte aktivitu, kde si tieto oprávnenia vyžiadate. V opačnom prípade je tretí parameter v ctx.mobileAppOpen() nepovinný.  
+Do service môžete odoslať cez dvojrozmerné pole ľubovolné String extras argumenty. Okrem nich sa odosielajú aj argumenty "intentFilterBroadcastString" a jedinečné "requestID", vďaka ktorému sa správne spáruje intent odpoveď, ktorá musí obsahovať "requestID" a "result" alebo "error":
 ```Java
 import android.app.Service;
 import android.content.Intent;
@@ -103,14 +104,4 @@ public class JJPluginSMSService extends Service {
 Fungujúca background servica je napríklad tu:
 [https://github.com/ObscurusGrassator/jjplugin-sms/blob/main/android-apk-source/app/src/main/java/jjplugin/obsgrass/sms/JJPluginSMSService.java](https://github.com/ObscurusGrassator/jjplugin-sms/blob/main/android-apk-source/app/src/main/java/jjplugin/obsgrass/sms/JJPluginSMSService.java)
 
-Povolenie špecifických oprávnení (permmisions) v service cez notifikačnú lištu - `app/build.gradle`:
-```
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'io.github.nishkarsh:android-permissions:2.1.6'
-```
-
-Deaktivovanie súšťania activity (ak žiadna neexistuje) dosiahnete úpravou MODE option hodnoty v súbore `.idea/workspace.xml` na `<option name="MODE" name="do_nothing"`.   
-
-Aby ste nemuseli do repozitára buplikovať generované súbory, všetky tieto uvedené nevyhnutné úpravy môžete zautomatizovať:
-[https://github.com/ObscurusGrassator/jjplugin-sms/blob/main/android-apk-source/init.sh](https://github.com/ObscurusGrassator/jjplugin-sms/blob/main/android-apk-source/init.sh)
-
+Deaktivovanie spúšťania activity (ak žiadna neexistuje) dosiahnete úpravou MODE option hodnoty v súbore `.idea/workspace.xml` na `<option name="MODE" name="do_nothing"`.   
