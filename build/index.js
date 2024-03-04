@@ -84,7 +84,11 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                                 {
                                     "origWord": /mi/,
                                     "propName": { "mi": "optional" }
-                                }, {
+                                }
+                            ]
+                        }, {
+                            "multiple": [
+                                {
                                     "origWord": [
                                         /správ[uy]/,
                                         /sms(ky)?/
@@ -220,8 +224,12 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                     },
                     "objects": [
                         {
-                            "origWord": /mi/,
-                            "propName": { "mi": "optional" }
+                            "multiple": [
+                                {
+                                    "origWord": /mi/,
+                                    "propName": { "mi": "optional" }
+                                }
+                            ]
                         }, {
                             "multiple": [
                                 {
@@ -279,8 +287,12 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
             },
             "objects": [
                 {
-                    "origWord": /mi/,
-                    "propName": { "mi": "optional" }
+                    "multiple": [
+                        {
+                            "origWord": /mi/,
+                            "propName": { "mi": "optional" }
+                        }
+                    ]
                 }, {
                     "multiple": [
                         {
