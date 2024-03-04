@@ -82,6 +82,9 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                         {
                             "multiple": [
                                 {
+                                    "origWord": /mi/,
+                                    "propName": { "mi": "optional" }
+                                }, {
                                     "origWord": [
                                         /správ[uy]/,
                                         /sms(ky)?/
@@ -100,17 +103,6 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                 }, {
                     "example": "Prišla mi nová správa?",
                     "type": "question",
-                    "predicates": {
-                        "multiple": [
-                            {
-                                "verbs": [
-                                    {
-                                        "baseWord": /prísť/
-                                    }
-                                ]
-                            }
-                        ]
-                    },
                     "subjects": {
                         "multiple": [
                             {
@@ -126,10 +118,39 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                                 ]
                             }
                         ]
-                    }
+                    },
+                    "predicates": {
+                        "multiple": [
+                            {
+                                "verbs": [
+                                    {
+                                        "baseWord": /prísť/
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "objects": [
+                        {
+                            "multiple": [
+                                {
+                                    "origWord": /mi/,
+                                    "propName": { "mi": "optional" }
+                                }
+                            ]
+                        }
+                    ]
                 }, {
                     "example": "Mám nejaké nové správy?",
                     "type": "question",
+                    "subjects": {
+                        "multiple": [
+                            {
+                                "baseWord": /ja/,
+                                "propName": { "ja": "optional" }
+                            }
+                        ]
+                    },
                     "predicates": {
                         "multiple": [
                             {
@@ -178,12 +199,20 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                 {
                     "example": "Prečítaj mi nové správy!",
                     "type": "command",
+                    "subjects": {
+                        "multiple": [
+                            {
+                                "baseWord": /ty/,
+                                "propName": { "ty": "optional" }
+                            }
+                        ]
+                    },
                     "predicates": {
                         "multiple": [
                             {
                                 "verbs": [
                                     {
-                                        "baseWord": /prečítať/
+                                        "baseWord": /prečítať|ukázať|zobraziť/
                                     }
                                 ]
                             }
@@ -191,6 +220,9 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                     },
                     "objects": [
                         {
+                            "origWord": /mi/,
+                            "propName": { "mi": "optional" }
+                        }, {
                             "multiple": [
                                 {
                                     "origWord": [
@@ -226,6 +258,14 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
         "sentenceMemberRequirements": {
             "example": "Čo mi píše <subject>?",
             "type": "question",
+            "subjects": {
+                "multiple": [
+                    {
+                        "origWord": /.*/
+                    }
+                ],
+                "propName": { "friend": "required" }
+            },
             "predicates": {
                 "multiple": [
                     {
@@ -237,16 +277,11 @@ module.exports = require("server/types/pluginFunctions.cjs").addPlugin(
                     }
                 ]
             },
-            "subjects": {
-                "multiple": [
-                    {
-                        "origWord": /.*/
-                    }
-                ],
-                "propName": { "friend": "required" }
-            },
             "objects": [
                 {
+                    "origWord": /mi/,
+                    "propName": { "mi": "optional" }
+                }, {
                     "multiple": [
                         {
                             "origWord": /čo/

@@ -56,16 +56,21 @@ module.exports = addPlugin({
             type: 'question',
             predicates: {multiple: [{verbs: [{baseWord: /(na|od)písať/}]}]},
             subjects: {multiple: [{origWord: /niekto/, propName: {'niekto': 'optional'}}]},
-            objects: [{multiple: [{origWord: [/správ[uy]/, /sms(ky)?/], propName: {'správu': 'optional'},
-                attributes: [{baseWord: /nový/, propName: {'novú': 'optional'}}]}]}],
+            objects: [
+                {multiple: [{origWord: /mi/, propName: {'mi': 'optional'}}]},
+                {multiple: [{origWord: [/správ[uy]/, /sms(ky)?/], propName: {'správu': 'optional'},
+                    attributes: [{baseWord: /nový/, propName: {'novú': 'optional'}}]}]}
+            ],
         }, {
             example: 'Prišla mi nová správa?',
             type: 'question',
-            predicates: {multiple: [{verbs: [{baseWord: /prísť/}]}]},
             subjects: {multiple: [{origWord: [/správ[uy]/, /sms(ky)?/], attributes: [{baseWord: /nový/, propName: {'novú': 'optional'}}]}]},
+            predicates: {multiple: [{verbs: [{baseWord: /prísť/}]}]},
+            objects: [{multiple: [{origWord: /mi/, propName: {'mi': 'optional'}}]}],
         }, {
             example: 'Mám nejaké nové správy?',
             type: 'question',
+            subjects: {multiple: [{baseWord: /ja/, propName: {'ja': 'optional'}}]},
             predicates: {multiple: [{verbs: [{baseWord: /mať/}]}]},
             objects: [{multiple: [{origWord: [/správ[uy]/, /sms(ky)?/], attributes: [
                 {baseWord: /nový/, propName: {'nový': 'optional'}},
@@ -86,11 +91,15 @@ module.exports = addPlugin({
         _or: [{
             example: 'Prečítaj mi nové správy!',
             type: 'command',
-            predicates: {multiple: [{verbs: [{baseWord: /prečítať/}]}]},
-            objects: [{multiple: [{origWord: [/správ[uy]/, /sms(ky)?/], attributes: [
-                {baseWord: /nový/, propName: {'nový': 'optional'}},
-                {baseWord: /všetky/, propName: {'všetky': 'optional'}},
-            ]}]}],
+            subjects: {multiple: [{baseWord: /ty/, propName: {'ty': 'optional'}}]},
+            predicates: {multiple: [{verbs: [{baseWord: /prečítať|ukázať|zobraziť/}]}]},
+            objects: [
+                {multiple: [{origWord: /mi/, propName: {'mi': 'optional'}}]},
+                {multiple: [{origWord: [/správ[uy]/, /sms(ky)?/], attributes: [
+                    {baseWord: /nový/, propName: {'nový': 'optional'}},
+                    {baseWord: /všetky/, propName: {'všetky': 'optional'}},
+                ]}]}
+            ],
         }]
     },
 }, async ctx => {
@@ -107,9 +116,12 @@ module.exports = addPlugin({
     sentenceMemberRequirements: {
         example: 'Čo mi píše <subject>?',
         type: 'question',
-        predicates: {multiple: [{verbs: [{baseWord: [/(na|od)písať/]}]}]},
         subjects: {multiple: [{origWord: /.*/}], propName: {friend: 'required'}},
-        objects: [{multiple: [{origWord: /čo/}]}],
+        predicates: {multiple: [{verbs: [{baseWord: [/(na|od)písať/]}]}]},
+        objects: [
+            {multiple: [{origWord: /mi/, propName: {'mi': 'optional'}}]},
+            {multiple: [{origWord: /čo/}]},
+        ],
     },
 }, async ctx => {
     const contact = await sendRequest(ctx, 'getContactByName', {name: ctx.propName.friend.multiple[0].baseWord});
