@@ -56,7 +56,7 @@ module.exports = class SMS {
      * @param { number } [options.minDateMilliseconds]
      * @param { number } [options.maxDateMilliseconds]
      * @param { string } [options.findMessageByRegex]
-     * @param { boolean } [options.onlyRead = false]
+     * @param { boolean } [options.onlyReaded = false]
      * @param { string } [options.smsFromNumber]
      * @returns { Promise<{[number: string]: {messages: string[], timestamp: number, number: string, fullName: string}}> }
      */
@@ -72,7 +72,7 @@ module.exports = class SMS {
         // @ts-ignore
         if (options.findMessageByRegex) options.bodyRegex = options.findMessageByRegex;
         // @ts-ignore
-        options.read = options.onlyRead ? 1 : 0;
+        options.read = options.onlyReaded ? 1 : 0;
         // @ts-ignore
         if (options.smsFromNumber) options.address = options.smsFromNumber;
 

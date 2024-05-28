@@ -22,7 +22,7 @@ module.exports = class {
      * @param { number } [options.minDateMilliseconds]
      * @param { number } [options.maxDateMilliseconds]
      * @param { string } [options.findMessageByRegex]
-     * @param { boolean } [options.onlyRead = false]
+     * @param { boolean } [options.onlyReaded = false]
      * @param { string } [options.smsFromNumber]
      * @returns { Promise<{[number: string]: {messages: string[], timestamp: number, number: string, fullName: string}}> }
      */
