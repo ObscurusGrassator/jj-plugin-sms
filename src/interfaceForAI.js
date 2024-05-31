@@ -15,7 +15,9 @@ module.exports = class {
     async sendMessage(smsNumber, message, fullName) {}
 
     /**
-     * Returns not readed messages array by sender mame from SMS
+     * Returns not readed messages array by sender mame from SMS.
+     * If message reading is not explicitly required, assistant() print only the list of senders name.
+     * Only if you print the message content, assistant() mark them as readed.
      * @param { Object } [options]
      * @param { boolean } [options.makrAsReaded = true]
      * @param { 'inbox' | 'sent' | 'draft' | 'outbox' | 'failed' | 'queued' | 'all' } [options.box = 'inbox']
