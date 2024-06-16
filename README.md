@@ -1,4 +1,4 @@
-Pre aktiváciu typovanie (JSDoc), ktoré Vás pomôže správne nakonfigurovať plugin, odporúčam používať VSCode IDE editor.  
+Pre aktiváciu typovania (JSDoc), ktoré Vás pomôže správne nakonfigurovať plugin, odporúčam používať VSCode IDE editor.  
 
 `npm install --save-dev jjplugin`
 
@@ -30,14 +30,15 @@ module.exports = addPlugin(
 ```
 
 **src/interfaceForAI.js**
-Toto je povinný súbor, obsahujúci typy a interface metód, ktoré môže ChatGPT využívať. Aby ich ChatGPT vedel použiť, musia byť dostatočne intuitívne a zdokumentované.
+Toto je povinný súbor, obsahujúci typy a interface metód, ktoré môže ChatGPT využívať. Aby ich ChatGPT vedel použiť, musia byť dostatočne intuitívne a zdokumentované cez JSDoc.
 ```js
 module.exports = class {
     /**
-     * @param { string } name
-     * @returns { Promise<{number: string, fullName: string}> }
+     * @param { string } smsNumber
+     * @param { string } message
+     * @returns { Promise<void> }
      */
-    async getContactByName(name) { return null; }
+    async sendMessage(smsNumber, message) {}
 ...
 ```
 
@@ -55,15 +56,10 @@ module.exports = class FacebookChat {
         this.options = options;
     }
 
-    /**
-     * @param { string } smsNumber
-     * @param { string } message
-     * @returns { Promise<void> }
-     */
     async sendMessage(smsNumber, message) {
         message = message.replace(/ __? /g, ' ');
 
-        // Povinné pre všetky operácie akékýchkoľvek zmien !!
+        // Povinné pre všetky operácie vykonávajúce akúkoľvek zmenu !!
         if (await this.options.getSummaryAccept(`SMS plugin: Môžem poslať správu na číslo ${smsNumber} s textom: ${message}`)) {
             ... implementácia
             await this.options.speech('Odoslané.');
@@ -74,7 +70,7 @@ module.exports = class FacebookChat {
 ...
 ```
 
-**POZOR: getSummaryAccept(summary)** Nezabudnite sa pre každú operáciu vykonávajúcu akúkoľvek úpravu spýtať používateľa na dodatočný súhlas za pomoci sumarizácie jednotlivých detailov jeho požiadavky, aby sa používateľ mohol pred úpravou uistiť, že systém rozpoznal správne jeho požiadavku. Niektoré úpravy môžu pre jednotlivých používateľov znamenať mentálne alebo dokonca finančné nepriemnosti.
+**POZOR: getSummaryAccept(summary)** Nezabudnite sa pre každú operáciu vykonávajúcu akúkoľvek úpravu spýtať používateľa na dodatočný súhlas za pomoci sumarizácie jednotlivých detailov jeho požiadavky, aby sa používateľ mohol pred úpravou uistiť, že systém rozpoznal správne jeho požiadavku, pretože niektoré úpravy môžu pre jednotlivých používateľov znamenať mentálne alebo dokonca finančné nepriemnosti.
 
 ## Ukážkové pluginy
 
@@ -89,7 +85,7 @@ module.exports = class FacebookChat {
 ctx.mobileAppOpen('jjplugin.obsgrass.sms', 'JJPluginSMSService', 'MainActivity', [["paramA", paramA], ["paramB", paramB]]);
 ```
 Ak aplikácia vyžaduje na svoj beh nejaké permissions, vytvorte aktivitu, kde si tieto oprávnenia vyžiadate. V opačnom prípade je tretí parameter v ctx.mobileAppOpen() nepovinný.  
-Do service môžete odoslať cez dvojrozmerné pole ľubovolné String extras argumenty. Okrem nich sa odosielajú aj systémové argumenty "intentFilterBroadcastString" a jedinečné "requestID", vďaka ktorému sa správne spáruje intent odpoveď, ktorá musí obsahovať "requestID" a "result" alebo "error":
+Do service môžete odoslať cez dvojrozmerné pole ľubovolné String extras argumenty. Okrem nich sa odosielajú aj systémové argumenty "intentFilterBroadcastString" a jedinečné "requestID", vďaka ktorému sa správne spáruje intent odpoveď, ktorá musí obsahovať "requestID" a buď "result" alebo "error":
 ```Java
 import android.app.Service;
 import android.content.Intent;
