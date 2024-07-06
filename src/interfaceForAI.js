@@ -6,13 +6,19 @@ module.exports = class {
      */
     async getContactByName(name) { return null; }
 
+    /** @returns { Promise<string> } Message */
+    async promptToSentMessageContent(textInvitingUserToDictateMessage) { return ''; }
+
+    /** @returns { Promise<string> } Message */
+    async promptToRecipientName(textInvitingUserToDictateRecipientName) { return ''; }
+
     /**
      * @param { string } smsNumber
      * @param { string } message
      * @param { string } [fullName]
-     * @returns { Promise<void> }
+     * @returns { Promise<Boolean> } Returns true if the user has agreed to send.
      */
-    async sendMessage(smsNumber, message, fullName) {}
+    async sendMessage(smsNumber, message, fullName) { return true; }
 
     /**
      * Returns not readed messages array by sender mame from SMS.

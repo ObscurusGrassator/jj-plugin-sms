@@ -31,20 +31,26 @@ module.exports = class SMS {
         return constact;
     }
 
+    /** @returns { Promise<string> } Message */
+    async promptToSentMessageContent(textInvitingUserToDictateMessage) { return (await this.options.speech(textInvitingUserToDictateMessage, true)).text; }
+
+    /** @returns { Promise<string> } Message */
+    async promptToRecipientName(textInvitingUserToDictateRecipientName) { return (await this.options.speech(textInvitingUserToDictateRecipientName, true)).text; }
+
     /**
      * @param { string } smsNumber
      * @param { string } message
      * @param { string } [fullName]
-     * @returns { Promise<void> }
+     * @returns { Promise<Boolean> } Returns true if the user has agreed to send.
      */
     async sendMessage(smsNumber, message, fullName) {
         message = message.replace(/ __? /g, ' ');
 
-        if (await this.options.getSummaryAccept(`SMS plugin: Môžem poslať správu priateľovi ${fullName || smsNumber} s textom: ${message}`)) {
+        if (await this.options.getSummaryAccept(`Môžem poslať SMS priateľovi ${fullName || smsNumber} s textom: ${message}`)) {
             await this.sendRequest('sendSMS', {number: smsNumber, message});
-            await this.options.speech('Odoslané.');
+            return true;
         } else {
-            await this.options.speech('Príkaz bol zrušený.');
+            return false;
         }
     }
 
