@@ -1,36 +1,60 @@
-Pre aktiváciu typovania (JSDoc), ktoré Vás pomôže správne nakonfigurovať plugin, odporúčam používať VSCode IDE editor.  
+To activate typing (JSDoc), which will help you configure the plugin correctly, I recommend using the VSCode IDE editor.  
 
 `npm install --save-dev jjplugin`
 
 `npx jjPluginBuild`
 
-**GitLab / GitHub topic** potrebný pre zviditelnenie pluginu pre JJAssisntanta: `jjplugin`
+**GitLab / GitHub topic** required to make the plugin visible for JJAssisntant: `jjplugin`
 
-**src/index.js:**
+**src/index.js (example and description):**
 ```js
 module.exports = addPlugin(
     {
-        // Konfig pluginu - čím univerzálnejšie zvolíte názvy klúčov, tým bude menšia pravdepodobnosť obťažovania
-        //   použivateľa zadávaním duplicitných hodnôt naprieč ostatnými pluginmi ("facebook", "login", "password").
-        // Akékoľvek cillivé údaje (napr. heslá), si musia pluginy ukladať cez túto konfiguráciu,
-        //   a nesmú byť zasielané tretím stranám, a ak danú službu sami neponúkajú, tak ani samotným autorom pluginu.
+        // Pluginu config - the more universal you choose the key names, the less likely it is to annoy the user 
+        //   by inserting duplicate values ​​across other plugins ("facebook", "login", "password").
+        // Any sensitive data (e.g. passwords) must be stored by plugins through this configuration, and must not be
+        //   sent to third parties, and if they do not offer the service themselves, not even to the themselves.
         serviceName: {
-            propertyWithoutValue: { type: 'string' },               // aplikácia vyzve používateľa na doplnenie hodnoty
-            propertyWithValue: { type: 'boolean', value: false },   // prednastavená hodnota
+            propertyWithoutValue: { type: 'string' },               // app prompts the user to fill in the value
+            propertyWithValue: { type: 'boolean', value: false },   // default value
         },
     },
-    specify_the_supported_os_and_cpu,
-    // scriptInitializer() sa spúšta pri spustení aplikácie pred spustením pluginu,
-    //   a vracia metódy (implementujúce interfaceForAI.js typy), ktoré môže ChatGPT využívať
-    async ctx => {
-        return new FacebookChat({...ctx, browserTab: await ctx.browserPluginStart('https://facebook.com/messages/t')});
+    {   // specify the supported OS and CPU
+        os: { linux: true, darwin: true, win32: false, android: true },
+        pluginFormatVersion: 1,
     },
-    otherOptionalFuncionsAndRequiredApplications
+    {
+        // scriptInitializer() is run when the application starts before the plugin starts,
+        //   and returns methods (implementing interfaceForAI.js types) that ChatGPT can use
+        scriptInitializer: async ctx => {
+            return new FacebookChat({...ctx, browserTab: await ctx.browserPluginStart('https://facebook.com/messages/t')});
+        },
+        // required prerequisites necessary for the plugin to run
+        moduleRequirementsPayed,
+        moduleRequirementsFree: [{name: 'SMS app',
+            linux: {
+                checkShell: 'npm list | grep SMS@',
+                installShell: 'npm install SMS'
+            },
+            android: {
+                packageName: 'jjplugin.obsgrass.sms',
+                downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.2.0/JJPluginSMS_v1.2.0.apk'
+            }
+        }],
+    },
+    {
+        // other optional funcions
+        scriptDestructor: async ctx => {
+            await ctx.methodsForAI.logout();
+            ctx.methodsForAI.options.browserTab.destructor();
+        },
+        scriptPerInterval: async ctx => {}
+    }
 );
 ```
 
 **src/interfaceForAI.js**
-Toto je povinný súbor, obsahujúci typy a interface metód, ktoré môže ChatGPT využívať. Aby ich ChatGPT vedel použiť, musia byť dostatočne intuitívne a zdokumentované cez JSDoc.
+This is a mandatory file, containing the types and interface methods that ChatGPT can use. In order for ChatGPT to be able to use them, they must be sufficiently intuitive and documented via JSDoc.
 ```js
 module.exports = class {
     /**
@@ -42,7 +66,7 @@ module.exports = class {
 ...
 ```
 
-**implementácia metód napr. v triede**
+**methods implementation e.g. in the classroom**
 ```js
 /** @typedef { import('./interfaceForAI.js') } InterfaceForAI */
 /** @implements { InterfaceForAI } */
@@ -59,33 +83,33 @@ module.exports = class FacebookChat {
     async sendMessage(smsNumber, message) {
         message = message.replace(/ __? /g, ' ');
 
-        // Povinné pre všetky operácie vykonávajúce akúkoľvek zmenu !!
-        if (await this.options.getSummaryAccept(`SMS plugin: Môžem poslať správu na číslo ${smsNumber} s textom: ${message}`)) {
+        // Mandatory for all operations performing any change !!
+        if (await this.options.getSummaryAccept(`FacebookChat plugin: Can I send a message to a number: ${smsNumber} with text: ${message}?`)) {
             ... implementácia
-            await this.options.speech('Odoslané.');
+            await this.options.speech('Sent.');
         } else {
-            await this.options.speech('Príkaz bol zrušený.');
+            await this.options.speech('The command has been cancelled.');
         }
     }
 ...
 ```
 
-**POZOR: getSummaryAccept(summary)** Nezabudnite sa pre každú operáciu vykonávajúcu akúkoľvek úpravu spýtať používateľa na dodatočný súhlas za pomoci sumarizácie jednotlivých detailov jeho požiadavky, aby sa používateľ mohol pred úpravou uistiť, že systém rozpoznal správne jeho požiadavku, pretože niektoré úpravy môžu pre jednotlivých používateľov znamenať mentálne alebo dokonca finančné nepriemnosti.
+**POZOR: getSummaryAccept(summary)** Do not forget to ask the user for additional consent for each command performing any modification by summarizing the individual details of his request, so that the user can make sure that the system has correctly recognized his request before editing, because some modifications can mean mental or even financial inconvenience for individual users.
 
-## Ukážkové pluginy
+## Sample plugins
 
-### Umelé API pre webové služby prostredníctvom vášho JavaScriptu vo WebView
+### Artificial API for web services through your JavaScript in WebView
 [https://github.com/ObscurusGrassator/jjplugin-facebook-chat](https://github.com/ObscurusGrassator/jjplugin-facebook-chat)
 
-### Volanie background service mobilnej aplikácie pre spustenie logiky v Androide
+### Call background service of Android application
 [https://github.com/ObscurusGrassator/jjplugin-sms](https://github.com/ObscurusGrassator/jjplugin-sms)
 
-**Príklad komunikácia JavaScriptu pluginu s doinštalovanou Java background service mobilnou aplikáciou:**
+**Example of JavaScript plugin communication with an installed Java background service of Android application:**
 ```js
 ctx.mobileAppOpen('jjplugin.obsgrass.sms', 'JJPluginSMSService', 'MainActivity', [["paramA", paramA], ["paramB", paramB]]);
 ```
-Ak aplikácia vyžaduje na svoj beh nejaké permissions, vytvorte aktivitu, kde si tieto oprávnenia vyžiadate. V opačnom prípade je tretí parameter v ctx.mobileAppOpen() nepovinný.  
-Do service môžete odoslať cez dvojrozmerné pole ľubovolné String extras argumenty. Okrem nich sa odosielajú aj systémové argumenty "intentFilterBroadcastString" a jedinečné "requestID", vďaka ktorému sa správne spáruje intent odpoveď, ktorá musí obsahovať "requestID" a buď "result" alebo "error":
+If the application requires some permissions to run, create an activity to request these permissions. Otherwise, the third parameter in ctx.mobileAppOpen() is optional.  
+You can send arbitrary user String extras arguments to the service via a two-dimensional array. In addition to these, the system arguments "intentFilterBroadcastString" and the unique "requestID" are also sent, thanks to which the intent response is correctly matched. The response must contain "requestID" and either "result" or "error":
 ```Java
 import android.app.Service;
 import android.content.Intent;
@@ -110,9 +134,9 @@ public class JJPluginSMSService extends Service {
     }
 ```
 
-#### Ostatné nevyhnutné úpravy
+#### Other necessary modifications
 
-Fungujúca background servica je napríklad tu:
+A working background service is here, for example:
 [https://github.com/ObscurusGrassator/jjplugin-sms/blob/main/android-apk-source/app/src/main/java/jjplugin/obsgrass/sms/JJPluginSMSService.java](https://github.com/ObscurusGrassator/jjplugin-sms/blob/main/android-apk-source/app/src/main/java/jjplugin/obsgrass/sms/JJPluginSMSService.java)
 
-Deaktivovanie spúšťania activity (ak žiadna neexistuje) dosiahnete úpravou MODE option hodnoty v súbore `.idea/workspace.xml` na `<option name="MODE" name="do_nothing"`.   
+You can deactivate the activation of the activity (if none exists) by editing the `MODE` option value in `.idea/workspace.xml` file to `<option name="MODE" name="do_nothing"`.  
