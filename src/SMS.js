@@ -7,7 +7,7 @@ module.exports = class SMS {
     lastMessages = '';
 
     constructor(options) {
-        /** @type { import('jjplugin').Ctx<import('jjplugin').ConfigFrom<typeof import('./index')['config']>, SMS> } */
+        /** @type { import('jjplugin').Ctx< import('jjplugin').ConfigFrom<typeof import('./index')['config']>, SMS, typeof import('./index')['translations'] > } */
         this.options = options;
     }
 
@@ -26,7 +26,7 @@ module.exports = class SMS {
     async getContactByName(name) {
         let constact = await this.sendRequest('getContactByName', {name});
 
-        if (!constact) throw `Meno "${name}" sa v kontaktoch nenachádza.`;
+        if (!constact) throw this.options.translate.realNameNotFound({name});
 
         return constact;
     }
@@ -46,7 +46,7 @@ module.exports = class SMS {
     async sendMessage(smsNumber, message, fullName) {
         message = message.replace(/ __? /g, ' ');
 
-        if (await this.options.getSummaryAccept(`Môžem poslať SMS priateľovi ${fullName || smsNumber} s textom: ${message}`)) {
+        if (await this.options.getSummaryAccept(this.options.translate.canSendMessage({realName: fullName || smsNumber, message}))) {
             await this.sendRequest('sendSMS', {number: smsNumber, message});
             return true;
         } else {

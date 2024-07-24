@@ -29,6 +29,12 @@ module.exports = addPlugin(
         scriptInitializer: async ctx => {
             return new FacebookChat({...ctx, browserTab: await ctx.browserPluginStart('https://facebook.com/messages/t')});
         },
+        translations: /** @type { const } */ ({
+            // Anglická verzia je povinná. Ostatné jazyky sa z nej preložia automaticky.
+            hello: {'en-US': 'Hello ${name}!'}
+        }),
+    },
+    {
         // programy či operácie nevyhnutné pre chod pluginu
         moduleRequirementsPayed,
         moduleRequirementsFree: [{name: 'SMS app',
@@ -41,19 +47,17 @@ module.exports = addPlugin(
                 downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.2.0/JJPluginSMS_v1.2.0.apk'
             }
         }],
-    },
-    {
         // ďaĹšie nepovinné funkcie
         scriptDestructor: async ctx => {
             await ctx.methodsForAI.logout();
             ctx.methodsForAI.options.browserTab.destructor();
         },
-        scriptPerInterval: async ctx => {}
+        scriptPerInterval: async ctx => {},
     }
 );
 ```
 
-**src/interfaceForAI.js**
+**src/interfaceForAI.js**  
 Toto je povinný súbor, obsahujúci typy a interface metód, ktoré môže ChatGPT využívať. Aby ich ChatGPT vedel použiť, musia byť dostatočne intuitívne a zdokumentované cez JSDoc.
 ```js
 module.exports = class {

@@ -14,6 +14,30 @@ module.exports = addPlugin({
     os: { android: true /*, ios: true*/ },
     pluginFormatVersion: 1,
 }, {
+    scriptInitializer: async ctx => new SMS(ctx),
+    translations: /** @type { const } */ ({
+        receivingMessages: {
+            "sk-SK": "Prišli nové SMS od",
+            "en-US": "There are new SMS from"
+        },
+        receivingMessage: {
+            "sk-SK": "Prišla nová SMS od priateľa",
+            "en-US": "There are new SMS from friend"
+        },
+        fromNumber: {
+            "sk-SK": "čísla",
+            "en-US": "number"
+        },
+        realNameNotFound: {
+            "sk-SK": "Meno \"${name}\" sa v blízkych kontaktoch nenachádza.",
+            "en-US": "The name \"${name}\" is not found in close contacts."
+        },
+        canSendMessage: {
+            "sk-SK": "Môžem poslať Facebook správu priateľovi ${realName} s textom: ${message}",
+            "en-US": "Can I send a Facebook message to friend ${realName} with the text: ${message}"
+        },
+    }),
+}, {
     moduleRequirementsFree: [{
         name: 'JJPlugin SMS apk',
         android: {
@@ -21,8 +45,6 @@ module.exports = addPlugin({
             downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.2.0/JJPluginSMS_v1.2.0.apk'
         }
     }],
-    scriptInitializer: async ctx => new SMS(ctx),
-}, {
     scriptPerInterval: async ctx => {
         if (!ctx.config.sms.automatic.checkNewMessage.value) return;
 
@@ -33,8 +55,8 @@ module.exports = addPlugin({
         if (messages && messages.length && ctx.methodsForAI.lastMessages != newMessagesString) {
             ctx.methodsForAI.lastMessages = newMessagesString;
 
-            if (messages.length  >  1) return 'Prišli nové SMS od ' + messages.map(a => (a.fullName || (/[a-z]/i.test(a.number) && a.number) || ('čísla: ' + readableNumber(a.number)))).join(', ').replace(/, ([^,]+)$/, ' a $1');
-            if (messages.length === 1) return 'Prišli novú SMS od ' + (messages[0].fullName || (/[a-z]/i.test(messages[0].number) && messages[0].number) || ('čísla: ' + readableNumber(messages[0].number)));
+            if (messages.length  >  1) return ctx.translate.receivingMessages + ' ' + messages.map(a => (a.fullName || (/[a-z]/i.test(a.number) && a.number) || (ctx.translate.fromNumber + ': ' + readableNumber(a.number)))).join(', ').replace(/, ([^,]+)$/, ' a $1');
+            if (messages.length === 1) return ctx.translate.receivingMessage + ' ' + (messages[0].fullName || (/[a-z]/i.test(messages[0].number) && messages[0].number) || (ctx.translate.fromNumber + ': ' + readableNumber(messages[0].number)));
         }
     },
 });

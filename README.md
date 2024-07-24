@@ -29,6 +29,12 @@ module.exports = addPlugin(
         scriptInitializer: async ctx => {
             return new FacebookChat({...ctx, browserTab: await ctx.browserPluginStart('https://facebook.com/messages/t')});
         },
+        translations: /** @type { const } */ ({
+            // The English version is mandatory. Other languages ​​are automatically translated from it.
+            hello: {'en-US': 'Hello ${name}!'}
+        }),
+    },
+    {
         // required prerequisites necessary for the plugin to run
         moduleRequirementsPayed,
         moduleRequirementsFree: [{name: 'SMS app',
@@ -41,19 +47,17 @@ module.exports = addPlugin(
                 downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.2.0/JJPluginSMS_v1.2.0.apk'
             }
         }],
-    },
-    {
         // other optional funcions
         scriptDestructor: async ctx => {
             await ctx.methodsForAI.logout();
             ctx.methodsForAI.options.browserTab.destructor();
         },
-        scriptPerInterval: async ctx => {}
+        scriptPerInterval: async ctx => {},
     }
 );
 ```
 
-**src/interfaceForAI.js**
+**src/interfaceForAI.js**  
 This is a mandatory file, containing the types and interface methods that ChatGPT can use. In order for ChatGPT to be able to use them, they must be sufficiently intuitive and documented via JSDoc.
 ```js
 module.exports = class {
@@ -66,7 +70,7 @@ module.exports = class {
 ...
 ```
 
-**methods implementation e.g. in the classroom**
+**methods implementation e.g. in the class**
 ```js
 /** @typedef { import('./interfaceForAI.js') } InterfaceForAI */
 /** @implements { InterfaceForAI } */
