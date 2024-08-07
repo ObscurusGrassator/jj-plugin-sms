@@ -1,10 +1,13 @@
-Pre aktiváciu typovania (JSDoc), ktoré Vás pomôže správne nakonfigurovať plugin, odporúčam používať VSCode IDE editor.  
+Pre aktiváciu typovania (JSDoc), ktoré Vás pomôže správne nakonfigurovať plugin, odporúčam používať Visual Studio Code IDE editor.  
 
 `npm install --save-dev jjplugin`
 
 `npx jjPluginBuild`
 
-**GitLab / GitHub topic** potrebný pre zviditelnenie pluginu pre JJAssisntanta: `jjplugin`
+**GitLab / GitHub topic** potrebný pre zviditelnenie pluginu pre JJAssisntanta: `jjplugin`  
+**GitLab / GitHub topic** označenie testovacieho pluginu vyditeľného len v debug mode: `dev`  
+
+Po znova spustení aplikácie sa nainštalujú najnovšie pluginy, a premaže sa console log.  
 
 **src/index.js (príklad a popis):**
 ```js
@@ -35,7 +38,7 @@ module.exports = addPlugin(
         }),
     },
     {
-        // programy či operácie nevyhnutné pre chod pluginu
+        // špecifikácia programov či operácií nevyhnutných pre chod pluginu
         moduleRequirementsPayed,
         moduleRequirementsFree: [{name: 'SMS app',
             linux: {
@@ -47,12 +50,11 @@ module.exports = addPlugin(
                 downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.2.0/JJPluginSMS_v1.2.0.apk'
             }
         }],
-        // ďaĹšie nepovinné funkcie
+        // ďaľšie nepovinné funkcie
         scriptDestructor: async ctx => {
             await ctx.methodsForAI.logout();
             ctx.methodsForAI.options.browserTab.destructor();
         },
-        scriptPerInterval: async ctx => {},
     }
 );
 ```

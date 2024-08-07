@@ -1,10 +1,13 @@
-To activate typing (JSDoc), which will help you configure the plugin correctly, I recommend using the VSCode IDE editor.  
+To activate typing (JSDoc), which will help you configure the plugin correctly, I recommend using the Visual Studio Code IDE editor.  
 
 `npm install --save-dev jjplugin`
 
 `npx jjPluginBuild`
 
-**GitLab / GitHub topic** required to make the plugin visible for JJAssisntant: `jjplugin`
+**GitLab / GitHub topic** required to make the plugin visible for JJAssisntant: `jjplugin`  
+**GitLab / GitHub topic** mark of the tested plugin in development available only in debug mode: `dev`  
+
+The latest plugins will be installed and the console log will be cleaned after restarting the application.  
 
 **src/index.js (example and description):**
 ```js
@@ -35,7 +38,7 @@ module.exports = addPlugin(
         }),
     },
     {
-        // required prerequisites necessary for the plugin to run
+        // specification of programs or operations necessary for the plugin to run
         moduleRequirementsPayed,
         moduleRequirementsFree: [{name: 'SMS app',
             linux: {
@@ -52,7 +55,6 @@ module.exports = addPlugin(
             await ctx.methodsForAI.logout();
             ctx.methodsForAI.options.browserTab.destructor();
         },
-        scriptPerInterval: async ctx => {},
     }
 );
 ```
