@@ -1,5 +1,7 @@
 package jjplugin.obsgrass.sms;
 
+import static androidx.core.content.ContextCompat.RECEIVER_EXPORTED;
+import static androidx.core.content.ContextCompat.registerReceiver;
 import static androidx.core.content.ContextCompat.startActivity;
 
 import java.util.regex.Pattern;
@@ -14,6 +16,7 @@ import org.json.JSONException;
 
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.util.Log;
 
 // import java.nio.charset.StandardCharsets;
@@ -28,10 +31,17 @@ import java.nio.file.Paths;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.ContentValues;
+import android.content.BroadcastReceiver;
 import android.provider.ContactsContract;
 import android.database.Cursor;
 import android.net.Uri;
 
+import android.os.Build;
+import androidx.core.app.NotificationCompat;
+import android.app.NotificationManager;
+import android.content.pm.ServiceInfo;
+import android.app.Activity;
+import android.app.PendingIntent;
 import android.telephony.SmsManager;
 
 
@@ -262,8 +272,93 @@ public class Functions {
 
     public Result sendSMS(JSONObject input) {
         try {
+            String SENT = "SMS_SENT";
+            String DELIVERED = "SMS_DELIVERED";
+//            SmsManager smsManager = SmsManager.getDefault();
+//            PendingIntent sentPI = PendingIntent.getBroadcast(context, 0, new Intent(DELIVERED), PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+//            ArrayList<PendingIntent> sendList = new ArrayList<>();
+//            sendList.add(sentPI);
+//            ArrayList<String> parts = smsManager.divideMessage(input.getString("message"));
+//
+//            smsManager.sendMultipartTextMessage(input.getString("number"), null, parts, sendList, null);
+
+            // https://mobiforge.com/design-development/sms-messaging-android
+            ArrayList<PendingIntent> sentPendingIntents = new ArrayList<PendingIntent>();
+            ArrayList<PendingIntent> deliveredPendingIntents = new ArrayList<PendingIntent>();
+            PendingIntent sentPI = PendingIntent.getBroadcast(context, 0, new Intent(SENT), PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+            PendingIntent deliveredPI = PendingIntent.getBroadcast(context, 0, new Intent(DELIVERED), PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
             SmsManager smsManager = SmsManager.getDefault();
-            smsManager.sendTextMessage(input.getString("number"), null, input.getString("message"), null, null);    
+            ArrayList<String> mSMSMessage = smsManager.divideMessage(input.getString("message"));
+
+            for (int i = 0; i < mSMSMessage.size(); i++) {
+                sentPendingIntents.add(i, sentPI);
+                deliveredPendingIntents.add(i, deliveredPI);
+            }
+
+            registerReceiver(context, new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context arg0, Intent arg1) {
+                    switch (getResultCode()) {
+                        case Activity.RESULT_OK:
+                            Log.d("~= jjPluginSMS", "onReceive: SMS sented");
+                            break;
+                        case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
+                            Log.e("~= jjPluginSMS", "onReceive: SmsManager.RESULT_ERROR_GENERIC_FAILURE:");
+                            break;
+                        case SmsManager.RESULT_ERROR_NO_SERVICE:
+                            Log.e("~= jjPluginSMS", "onReceive: SmsManager.RESULT_ERROR_NO_SERVICE");
+                            break;
+                        case SmsManager.RESULT_ERROR_NULL_PDU:
+                            Log.e("~= jjPluginSMS", "onReceive: SmsManager.RESULT_ERROR_NULL_PDU");
+                            break;
+                        case SmsManager.RESULT_ERROR_RADIO_OFF:
+                            Log.e("~= jjPluginSMS", "onReceive: SmsManager.RESULT_ERROR_RADIO_OFF");
+                            break;
+                    }
+                    context.unregisterReceiver(this);
+                }
+            }, new IntentFilter(SENT), RECEIVER_EXPORTED);
+
+            //---when the SMS has been delivered---
+            registerReceiver(context, new BroadcastReceiver(){
+                @Override
+                public void onReceive(Context arg0, Intent arg1) {
+                    switch (getResultCode())
+                    {
+                        case Activity.RESULT_OK:
+                            Log.d("~= jjPluginSMS", "onReceive: SMS delivered");
+                            break;
+                        case Activity.RESULT_CANCELED:
+                            Log.e("~= jjPluginSMS", "onReceive: Activity.RESULT_CANCELED (SMS not delivered)");
+                            break;
+                    }
+                    context.unregisterReceiver(this);
+                }
+            }, new IntentFilter(DELIVERED), RECEIVER_EXPORTED);
+
+            smsManager.sendMultipartTextMessage(input.getString("number"), null, mSMSMessage, sentPendingIntents, deliveredPendingIntents);
+
+//            Intent i1=new Intent(this,MainActivity.class);
+//            PendingIntent i2=PendingIntent.getActivity(this,1,i1,PendingIntent.FLAG_UPDATE_CURRENT);
+//            Intent notificationIntent = new Intent(this, TimerActivity.class);
+//            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+
+//            NotificationCompat.Builder notification = new NotificationCompat.Builder(context, MainActivity.BROADCAST_CALLBAC)
+//                    .setAutoCancel(true)
+//                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+//                    .setContentTitle("JJPluginSMS")
+//                    .setContentText("Send SMS to " + input.getString("number"))
+//                    // .setContentIntent(pendingIntent)
+//                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+//            int type = 0;
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+//                type = ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE;
+//            }
+//            NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+//            mNotificationManager.notify(1, notification.build());
+//            // notify(1, notification.build());
+//            // context.startForeground(1, notification.build(), type);
+
             return new Result("ok");
         } catch (Exception e) {
             Log.e("~= jjPluginSMS", "SMS send error: " + e.toString());

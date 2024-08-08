@@ -4,15 +4,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.content.BroadcastReceiver;
 import android.os.Bundle;
+import android.os.Build;
 import android.util.Log;
-import android.view.Window;
-import android.view.WindowManager;
+import android.app.NotificationManager;
+import android.app.NotificationChannel;
 
 import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
+    public static final String BROADCAST_CALLBAC = "JJPluginSMS";
 
     Functions functions = new Functions(this);
     String requestID = null;
@@ -40,5 +42,14 @@ public class MainActivity extends AppCompatActivity {
         };
 
         ActivityCompat.requestPermissions(this, permissions, 1);
+
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            NotificationChannel channel = new NotificationChannel(
+//                    BROADCAST_CALLBAC,
+//                    "JJAssistant Channel",
+//                    NotificationManager.IMPORTANCE_LOW
+//            );
+//            getSystemService(NotificationManager.class).createNotificationChannel(channel);
+//        }
     }
 }
