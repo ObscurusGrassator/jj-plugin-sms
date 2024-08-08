@@ -30,7 +30,7 @@ module.exports = addPlugin({
         name: 'JJPlugin SMS apk',
         android: {
             packageName: 'jjplugin.obsgrass.sms',
-            downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.2.0/JJPluginSMS_v1.3.0.apk'
+            downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.3.0/JJPluginSMS_v1.3.0.apk'
         }
     }],
 });
