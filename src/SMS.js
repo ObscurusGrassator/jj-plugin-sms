@@ -32,10 +32,10 @@ module.exports = class SMS {
     }
 
     /** @returns { Promise<string> } Message */
-    async promptToSentMessageContent(textInvitingUserToDictateMessage) { return (await this.options.speech(textInvitingUserToDictateMessage, true)).text; }
+    async promptToSentMessageContent(textInvitingUserToDictateMessage) { return (await this.options.speech(this.options.translate.messageContentQuestion, true)).text; }
 
     /** @returns { Promise<string> } Message */
-    async promptToRecipientName(textInvitingUserToDictateRecipientName) { return (await this.options.speech(textInvitingUserToDictateRecipientName, true)).text; }
+    async promptToRecipientName(textInvitingUserToDictateRecipientName) { return (await this.options.speech(this.options.translate.recipientNameQuestion, true)).text; }
 
     /**
      * @param { string } smsNumber
@@ -47,6 +47,7 @@ module.exports = class SMS {
         message = message.replace(/ __? /g, ' ');
 
         if (await this.options.getSummaryAccept(this.options.translate.canSendMessage({realName: fullName || smsNumber, message}))) {
+            this.options.speech(this.options.translate.sendingMessage);
             await this.sendRequest('sendSMS', {number: smsNumber, message});
             return true;
         } else {

@@ -24,6 +24,18 @@ module.exports = addPlugin({
             "sk-SK": "Môžem poslať SMS priateľovi ${realName} s textom: ${message}",
             "en-US": "Can I send a SMS to friend ${realName} with the text: ${message}"
         },
+        recipientNameQuestion: {
+            "sk-SK": "Komu mám správu odoslať?",
+            "en-US": "Who should I send the message to?"
+        },
+        messageContentQuestion: {
+            "sk-SK": "Môžete diktovať text správy:",
+            "en-US": "You can dictate the message text:"
+        },
+        sendingMessage: {
+            "sk-SK": "Odosielam SMS...",
+            "en-US": "I am sending the SMS..."
+        },
     }),
 }, {
     moduleRequirementsFree: [{
