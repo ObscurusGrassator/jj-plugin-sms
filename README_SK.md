@@ -161,7 +161,7 @@ public class JJPluginSMSService extends Service {
         // ... vaša logika
 
 
-        // Odosielanie výsledku/chyby do JJAssistanta and ukončenie procesu
+        // Odosielanie výsledku/chyby do JJAssistanta a ukončenie procesu
         Intent intent = new Intent(extras.getString("intentFilterBroadcastString"));
         intent.putExtra("requestID", extras.getString("requestID"));
         if (error == null)

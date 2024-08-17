@@ -272,6 +272,7 @@ public class Functions {
 
     public Result sendSMS(JSONObject input) {
         try {
+            final Result[] res = {null};
             String SENT = "SMS_SENT";
             String DELIVERED = "SMS_DELIVERED";
 //            SmsManager smsManager = SmsManager.getDefault();
@@ -300,19 +301,19 @@ public class Functions {
                 public void onReceive(Context arg0, Intent arg1) {
                     switch (getResultCode()) {
                         case Activity.RESULT_OK:
-                            Log.d("~= jjPluginSMS", "onReceive: SMS sented");
+                            res[0] = new Result("onReceive: SMS sented");
                             break;
                         case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                            Log.e("~= jjPluginSMS", "onReceive: SmsManager.RESULT_ERROR_GENERIC_FAILURE:");
+                            res[0] = new Result("", "onReceive: SmsManager.RESULT_ERROR_GENERIC_FAILURE");
                             break;
                         case SmsManager.RESULT_ERROR_NO_SERVICE:
-                            Log.e("~= jjPluginSMS", "onReceive: SmsManager.RESULT_ERROR_NO_SERVICE");
+                            res[0] = new Result("", "onReceive: SmsManager.RESULT_ERROR_NO_SERVICE");
                             break;
                         case SmsManager.RESULT_ERROR_NULL_PDU:
-                            Log.e("~= jjPluginSMS", "onReceive: SmsManager.RESULT_ERROR_NULL_PDU");
+                            res[0] = new Result("", "onReceive: SmsManager.RESULT_ERROR_NULL_PDU");
                             break;
                         case SmsManager.RESULT_ERROR_RADIO_OFF:
-                            Log.e("~= jjPluginSMS", "onReceive: SmsManager.RESULT_ERROR_RADIO_OFF");
+                            res[0] = new Result("", "onReceive: SmsManager.RESULT_ERROR_RADIO_OFF");
                             break;
                     }
                     context.unregisterReceiver(this);
@@ -323,8 +324,7 @@ public class Functions {
             registerReceiver(context, new BroadcastReceiver(){
                 @Override
                 public void onReceive(Context arg0, Intent arg1) {
-                    switch (getResultCode())
-                    {
+                    switch (getResultCode()) {
                         case Activity.RESULT_OK:
                             Log.d("~= jjPluginSMS", "onReceive: SMS delivered");
                             break;
@@ -359,7 +359,25 @@ public class Functions {
 //            // notify(1, notification.build());
 //            // context.startForeground(1, notification.build(), type);
 
-            return new Result("ok");
+            try {
+                int miliSecWait = 200;
+                int miliSecMax = 1000 * 25;
+                while (miliSecMax > 0) {
+                    Thread.sleep(miliSecWait);
+                    miliSecMax = miliSecMax - miliSecWait;
+                    if (res[0] != null) {
+                        if (res[0].error != null)
+                             Log.e("~= jjPluginSMS", res[0].error);
+                        else Log.d("~= jjPluginSMS", res[0].body);
+
+                        return res[0];
+                    }
+                }
+            } catch (Exception ee) {
+                return new Result("", ee.toString());
+            }
+
+            return new Result("", "jjPluginSMS: 25s TimeOut for SMS sending has expired");
         } catch (Exception e) {
             Log.e("~= jjPluginSMS", "SMS send error: " + e.toString());
             return new Result("", "SMS send error: " + e.toString());
