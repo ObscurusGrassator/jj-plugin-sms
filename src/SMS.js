@@ -52,11 +52,11 @@ module.exports = class SMS {
                 await this.sendRequest('sendSMS', {number: smsNumber, message});
             } catch (err) {
                 if (err.toString().toLocaleLowerCase().indexOf('status') > -1) {
-                    this.options.speech(this.options.translate.sendingFailed);
-                    this.options.speech(err.toString(), false, {speakDisable: true});
+                    await this.options.speech(this.options.translate.sendingFailed + ' ' + err.toString());
+                    // this.options.speech(err.toString(), false, {speakDisable: true});
                 }
                 if (err.toString().toLocaleLowerCase().indexOf('timeout') > -1)
-                    this.options.speech(this.options.translate.sendingTimeout);
+                    await this.options.speech(this.options.translate.sendingTimeout);
                 else throw err;
             }
             return true;
