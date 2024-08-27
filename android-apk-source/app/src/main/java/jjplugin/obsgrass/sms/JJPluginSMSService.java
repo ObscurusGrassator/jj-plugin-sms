@@ -71,7 +71,7 @@ public class JJPluginSMSService extends Service {
             try {
                 Log.d("~= jjPluginSMS", "method executing...");
                 Functions.Result result = functions.run(serviceMethod, input);
-                Log.d("~= jjPluginSMS", "result send...");
+                Log.d("~= jjPluginSMS", "result: " + result.body + ", error: " + result.error);
 
                 return sendResult(result);
             } catch (Exception e) {

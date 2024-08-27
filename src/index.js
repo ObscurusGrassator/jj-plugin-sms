@@ -36,13 +36,21 @@ module.exports = addPlugin({
             "sk-SK": "Odosielam SMS...",
             "en-US": "I am sending the SMS..."
         },
+        sendingFailed: {
+            "sk-SK": "Odosielanie SMS zlihalo.",
+            "en-US": "SMS sending failed."
+        },
+        sendingTimeout: {
+            "sk-SK": "Niesom si istý, či bola SMS správne odoslaná.",
+            "en-US": "I am not sure if the SMS was sent correctly."
+        },
     }),
 }, {
     moduleRequirementsFree: [{
         name: 'JJPlugin SMS apk',
         android: {
             packageName: 'jjplugin.obsgrass.sms',
-            downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.3.0/JJPluginSMS_v1.3.0.apk'
+            downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.3.1/JJPluginSMS_v1.3.1.apk'
         }
     }],
 });

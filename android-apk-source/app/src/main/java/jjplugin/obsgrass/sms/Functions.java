@@ -1,6 +1,6 @@
 package jjplugin.obsgrass.sms;
 
-import static androidx.core.content.ContextCompat.RECEIVER_EXPORTED;
+import static androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED;
 import static androidx.core.content.ContextCompat.registerReceiver;
 import static androidx.core.content.ContextCompat.startActivity;
 
@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
+import java.lang.reflect.Modifier;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
@@ -36,10 +37,6 @@ import android.provider.ContactsContract;
 import android.database.Cursor;
 import android.net.Uri;
 
-import android.os.Build;
-import androidx.core.app.NotificationCompat;
-import android.app.NotificationManager;
-import android.content.pm.ServiceInfo;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.telephony.SmsManager;
@@ -270,24 +267,34 @@ public class Functions {
         } 
     }
 
+    private String getConstantName(int value) {
+        for ( java.lang.reflect.Field f : Activity.class.getDeclaredFields()) {
+            int mod = f.getModifiers();
+            if (Modifier.isStatic(mod) && Modifier.isPublic(mod) && Modifier.isFinal(mod)) {
+                try {
+                    // Log.d(LOG_TAG, String.format("%s = %d%n", f.getName(), (int) f.get(null)));
+                    if((int) f.get(null) == value) {return f.getName();}
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
+    }
+
     public Result sendSMS(JSONObject input) {
         try {
             final Result[] res = {null};
             String SENT = "SMS_SENT";
             String DELIVERED = "SMS_DELIVERED";
-//            SmsManager smsManager = SmsManager.getDefault();
-//            PendingIntent sentPI = PendingIntent.getBroadcast(context, 0, new Intent(DELIVERED), PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
-//            ArrayList<PendingIntent> sendList = new ArrayList<>();
-//            sendList.add(sentPI);
-//            ArrayList<String> parts = smsManager.divideMessage(input.getString("message"));
-//
-//            smsManager.sendMultipartTextMessage(input.getString("number"), null, parts, sendList, null);
 
             // https://mobiforge.com/design-development/sms-messaging-android
             ArrayList<PendingIntent> sentPendingIntents = new ArrayList<PendingIntent>();
             ArrayList<PendingIntent> deliveredPendingIntents = new ArrayList<PendingIntent>();
-            PendingIntent sentPI = PendingIntent.getBroadcast(context, 0, new Intent(SENT), PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
-            PendingIntent deliveredPI = PendingIntent.getBroadcast(context, 0, new Intent(DELIVERED), PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+            Intent iSent      = new Intent(SENT);      iSent.setPackage(context.getPackageName());
+            Intent iDelivered = new Intent(SENT); iDelivered.setPackage(context.getPackageName());
+            PendingIntent sentPI = PendingIntent.getBroadcast(context, 0, iSent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+            PendingIntent deliveredPI = PendingIntent.getBroadcast(context, 0, iDelivered, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
             SmsManager smsManager = SmsManager.getDefault();
             ArrayList<String> mSMSMessage = smsManager.divideMessage(input.getString("message"));
 
@@ -296,68 +303,48 @@ public class Functions {
                 deliveredPendingIntents.add(i, deliveredPI);
             }
 
-            registerReceiver(context, new BroadcastReceiver() {
+            final boolean[] sentReceiverRegistered = {true};
+            BroadcastReceiver sentReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context arg0, Intent arg1) {
                     switch (getResultCode()) {
                         case Activity.RESULT_OK:
-                            res[0] = new Result("onReceive: SMS sented");
+                            res[0] = new Result("sented status: SMS sented OK");
                             break;
-                        case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                            res[0] = new Result("", "onReceive: SmsManager.RESULT_ERROR_GENERIC_FAILURE");
-                            break;
-                        case SmsManager.RESULT_ERROR_NO_SERVICE:
-                            res[0] = new Result("", "onReceive: SmsManager.RESULT_ERROR_NO_SERVICE");
-                            break;
-                        case SmsManager.RESULT_ERROR_NULL_PDU:
-                            res[0] = new Result("", "onReceive: SmsManager.RESULT_ERROR_NULL_PDU");
-                            break;
-                        case SmsManager.RESULT_ERROR_RADIO_OFF:
-                            res[0] = new Result("", "onReceive: SmsManager.RESULT_ERROR_RADIO_OFF");
+                        default:
+                            res[0] = new Result("", "sented status: " + getConstantName(getResultCode()));
                             break;
                     }
-                    context.unregisterReceiver(this);
+                    if (sentReceiverRegistered[0]) {
+                        context.unregisterReceiver(this);
+                        sentReceiverRegistered[0] = false;
+                    }
                 }
-            }, new IntentFilter(SENT), RECEIVER_EXPORTED);
+            };
+            context.registerReceiver(sentReceiver, new IntentFilter(SENT), RECEIVER_NOT_EXPORTED);
 
             //---when the SMS has been delivered---
-            registerReceiver(context, new BroadcastReceiver(){
+            final boolean[] deliveredReceiverRegistered = {true};
+            BroadcastReceiver deliveredReceiver = new BroadcastReceiver(){
                 @Override
                 public void onReceive(Context arg0, Intent arg1) {
                     switch (getResultCode()) {
                         case Activity.RESULT_OK:
-                            Log.d("~= jjPluginSMS", "onReceive: SMS delivered");
+                            res[0] = new Result("delivered status: SMS delivered OK");
                             break;
-                        case Activity.RESULT_CANCELED:
-                            Log.e("~= jjPluginSMS", "onReceive: Activity.RESULT_CANCELED (SMS not delivered)");
+                        default:
+                            res[0] = new Result("", "delivered status: " + getConstantName(getResultCode()) + " (SMS not delivered)");
                             break;
                     }
-                    context.unregisterReceiver(this);
+                    if (deliveredReceiverRegistered[0]) {
+                        context.unregisterReceiver(this);
+                        deliveredReceiverRegistered[0] = false;
+                    }
                 }
-            }, new IntentFilter(DELIVERED), RECEIVER_EXPORTED);
+            };
+            context.registerReceiver(deliveredReceiver, new IntentFilter(DELIVERED), RECEIVER_NOT_EXPORTED);
 
             smsManager.sendMultipartTextMessage(input.getString("number"), null, mSMSMessage, sentPendingIntents, deliveredPendingIntents);
-
-//            Intent i1=new Intent(this,MainActivity.class);
-//            PendingIntent i2=PendingIntent.getActivity(this,1,i1,PendingIntent.FLAG_UPDATE_CURRENT);
-//            Intent notificationIntent = new Intent(this, TimerActivity.class);
-//            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-
-//            NotificationCompat.Builder notification = new NotificationCompat.Builder(context, MainActivity.BROADCAST_CALLBAC)
-//                    .setAutoCancel(true)
-//                    .setSmallIcon(R.drawable.ic_launcher_foreground)
-//                    .setContentTitle("JJPluginSMS")
-//                    .setContentText("Send SMS to " + input.getString("number"))
-//                    // .setContentIntent(pendingIntent)
-//                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-//            int type = 0;
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-//                type = ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE;
-//            }
-//            NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-//            mNotificationManager.notify(1, notification.build());
-//            // notify(1, notification.build());
-//            // context.startForeground(1, notification.build(), type);
 
             try {
                 int miliSecWait = 200;
@@ -375,12 +362,21 @@ public class Functions {
                 }
             } catch (Exception ee) {
                 return new Result("", ee.toString());
+            } finally {
+                if (sentReceiverRegistered[0]) {
+                    context.unregisterReceiver(sentReceiver);
+                    sentReceiverRegistered[0] = false;
+                }
+                if (deliveredReceiverRegistered[0]) {
+                    context.unregisterReceiver(deliveredReceiver);
+                    deliveredReceiverRegistered[0] = false;
+                }
             }
 
-            return new Result("", "jjPluginSMS: 25s TimeOut for SMS sending has expired");
+            return new Result("", "jjPluginSMS status: 25s TimeOut for SMS sending has expired");
         } catch (Exception e) {
-            Log.e("~= jjPluginSMS", "SMS send error: " + e.toString());
-            return new Result("", "SMS send error: " + e.toString());
+            Log.e("~= jjPluginSMS", "SMS error: " + e.toString());
+            return new Result("", "SMS error: " + e.toString());
         }
     }
 

@@ -10,10 +10,21 @@ android {
         applicationId "jjplugin.obsgrass.sms"
         minSdk 26
         targetSdk 33
-        versionCode 3
-        versionName "1.2"
+        versionCode 5
+        versionName "1.3.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        release {
+            if (project.hasProperty('RELEASE_STORE_FILE')) {
+                storeFile file(RELEASE_STORE_FILE)
+                storePassword RELEASE_STORE_PASSWORD
+                keyAlias RELEASE_KEY_ALIAS
+                keyPassword RELEASE_KEY_PASSWORD
+            }
+        }
     }
 
     buildTypes {

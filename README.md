@@ -101,7 +101,7 @@ module.exports = class FacebookChat {
 ...
 ```
 
-**POZOR: getSummaryAccept(summary)** Do not forget to ask the user for additional consent for each command performing any modification by summarizing the individual details of his request, so that the user can make sure that the system has correctly recognized his request before editing, because some modifications can mean mental or even financial inconvenience for individual users.
+**WARNING: getSummaryAccept(summary)** Do not forget to ask the user for additional consent for each command performing any modification by summarizing the individual details of his request, so that the user can make sure that the system has correctly recognized his request before editing, because some modifications can mean mental or even financial inconvenience for individual users.
 
 ## Sample plugins
 
@@ -124,8 +124,15 @@ import android.content.Intent;
 import android.content.ComponentName;    
 
 public class JJPluginSMSService extends Service {
+    private static String oldRequestID = "";
+
     public int onStartCommand(Intent intent, int flags, int startId) {
         Bundle extras = intent.getExtras();
+
+        // Sometimes the service is called multiple times at the same time with the same parameters.
+        if (extras.getString("requestID").equals(oldRequestID)) {
+            return Service.START_REDELIVER_INTENT;
+        } else oldRequestID = extras.getString("requestID");
 
         // Sending plugin logs to JJAssistant
         Boolean loging = true;
@@ -176,6 +183,8 @@ public class JJPluginSMSService extends Service {
     }
 ```
 Complete example of Android service: [jjplugin-sms](https://github.com/ObscurusGrassator/jjplugin-sms/blob/main/android-apk-source/app/src/main/java/jjplugin/obsgrass/sms/JJPluginSMSService.java)  
+
+**WARNING:** Sometimes the service is called multiple times at the same time with the same parameters.  
 
 #### Other necessary modifications
 

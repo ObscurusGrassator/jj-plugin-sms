@@ -8,8 +8,6 @@ import android.content.BroadcastReceiver;
 import android.os.Bundle;
 import android.os.Build;
 import android.util.Log;
-import android.app.NotificationManager;
-import android.app.NotificationChannel;
 
 import org.json.JSONObject;
 
@@ -39,17 +37,9 @@ public class MainActivity extends AppCompatActivity {
                 android.Manifest.permission.READ_CONTACTS,
                 android.Manifest.permission.READ_SMS,
                 android.Manifest.permission.SEND_SMS,
+                android.Manifest.permission.RECEIVE_SMS,
         };
 
         ActivityCompat.requestPermissions(this, permissions, 1);
-
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            NotificationChannel channel = new NotificationChannel(
-//                    BROADCAST_CALLBAC,
-//                    "JJAssistant Channel",
-//                    NotificationManager.IMPORTANCE_LOW
-//            );
-//            getSystemService(NotificationManager.class).createNotificationChannel(channel);
-//        }
     }
 }

@@ -48,7 +48,17 @@ module.exports = class SMS {
 
         if (await this.options.getSummaryAccept(this.options.translate.canSendMessage({realName: fullName || smsNumber, message}))) {
             this.options.speech(this.options.translate.sendingMessage);
-            await this.sendRequest('sendSMS', {number: smsNumber, message});
+            try {
+                await this.sendRequest('sendSMS', {number: smsNumber, message});
+            } catch (err) {
+                if (err.toString().toLocaleLowerCase().indexOf('status') > -1) {
+                    this.options.speech(this.options.translate.sendingFailed);
+                    this.options.speech(err.toString(), false, {speakDisable: true});
+                }
+                if (err.toString().toLocaleLowerCase().indexOf('timeout') > -1)
+                    this.options.speech(this.options.translate.sendingTimeout);
+                else throw err;
+            }
             return true;
         } else {
             return false;
