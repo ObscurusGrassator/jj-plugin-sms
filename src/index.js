@@ -41,8 +41,8 @@ module.exports = addPlugin({
             "en-US": "SMS sending failed."
         },
         sendingTimeout: {
-            "sk-SK": "Niesom si istý, či bola SMS správne odoslaná.",
-            "en-US": "I am not sure if the SMS was sent correctly."
+            "sk-SK": "Niesom si istý, že ...",
+            "en-US": "I'm not sure that..."
         },
     }),
 }, {
