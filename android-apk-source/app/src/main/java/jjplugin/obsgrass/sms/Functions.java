@@ -1,15 +1,16 @@
 package jjplugin.obsgrass.sms;
 
-import static androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED;
-import static androidx.core.content.ContextCompat.registerReceiver;
-import static androidx.core.content.ContextCompat.startActivity;
+import static android.content.Intent.FLAG_RECEIVER_FOREGROUND;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
+import java.util.Date;
 import java.lang.reflect.Modifier;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -20,7 +21,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
 
-// import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -31,7 +31,6 @@ import java.nio.file.Paths;
 
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.ContentValues;
 import android.content.BroadcastReceiver;
 import android.provider.ContactsContract;
 import android.database.Cursor;
@@ -46,8 +45,12 @@ import android.telephony.SmsManager;
 public class Functions {
     public Context context = null;
     private JSONObject data;
+    private int id = 0;
+    private static Map<Integer, Result> results = new HashMap<Integer, Result>();
 
     Functions(Context context) { this.context = context; }
+
+    public static void setResult(int id, Result res) { results.put(id, res); }
 
     public Result run(String methodName, JSONObject input) {
         if (methodName.equals("test")) return test(input);
@@ -163,26 +166,30 @@ public class Functions {
         return null;
     }
 
-    class Result {
-        Result(String body) {
-            this.body = body;
-        }
-        Result(String body, String error) {
-            this.error = error;
-        }
+    static class Result {
+        public String status = null;
         public String body = null;
         public String error = null;
+
+        Result(String body) { this.body = body; }
+        Result(String body, String error) { this.error = error; }
+        Result(String body, String error, String status) {
+            if (body != null && !body.equals(""))
+                 this.body = body;
+            else this.error = error;
+            this.status = status;
+        }
     }
 
-    class Contact {
+    static class Contact {
+        public String fullName = null;
+        public String number = null;
+        public Integer ratio = 0;
         Contact(String fullName, String number) {
             this.fullName = fullName;
             this.number = number;
         }
         public void addRatio(Integer add) { ratio = ratio + add; }
-        public String fullName = null;
-        public String number = null;
-        public Integer ratio = 0;
     }
 
     public Result getContactByName(JSONObject input) {
@@ -282,102 +289,125 @@ public class Functions {
         return null;
     }
 
+    public static String SENT = "SMS_SENT";
+    public static String DELIVERED = "SMS_DELIVERED";
     public Result sendSMS(JSONObject input) {
+        Result res = null;
         try {
-            final Result[] res = {null};
-            String SENT = "SMS_SENT";
-            String DELIVERED = "SMS_DELIVERED";
-
+            id++;
+            int idd = id;
             // https://mobiforge.com/design-development/sms-messaging-android
-            ArrayList<PendingIntent> sentPendingIntents = new ArrayList<PendingIntent>();
+            // https://stackoverflow.com/questions/24673595/how-to-get-sms-sent-confirmation-for-each-contact-person-in-android/24845193#24845193
+            // https://github.com/gonodono/sms-sender/tree/main
+
+            ArrayList<PendingIntent> sentPendingIntents      = new ArrayList<PendingIntent>();
             ArrayList<PendingIntent> deliveredPendingIntents = new ArrayList<PendingIntent>();
-            Intent iSent      = new Intent(SENT);      iSent.setPackage(context.getPackageName());
-            Intent iDelivered = new Intent(SENT); iDelivered.setPackage(context.getPackageName());
-            PendingIntent sentPI = PendingIntent.getBroadcast(context, 0, iSent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
-            PendingIntent deliveredPI = PendingIntent.getBroadcast(context, 0, iDelivered, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+
             SmsManager smsManager = SmsManager.getDefault();
             ArrayList<String> mSMSMessage = smsManager.divideMessage(input.getString("message"));
 
             for (int i = 0; i < mSMSMessage.size(); i++) {
+                Intent iSent = new Intent(SENT)
+                        .setPackage(context.getPackageName())
+                        .setClass(context, SMSBroadcastReceiver.class)
+                        .setFlags(FLAG_RECEIVER_FOREGROUND)
+                        .putExtra("id", idd + "");
+                Intent iDelivered = new Intent(DELIVERED)
+                        .setPackage(context.getPackageName())
+                        .setClass(context, SMSBroadcastReceiver.class)
+                        .setFlags(FLAG_RECEIVER_FOREGROUND)
+                        .putExtra("id", idd + "");
+//            Intent iSent = new Intent(
+//                SENT,
+//                Uri.fromParts("app", context.getPackageName(), Long.toString(new Date().getTime()-1000)),
+//                context,
+//                SMSBroadcastReceiver.class
+//            ).putExtra("id", idd + "");
+//            Intent iDelivered = new Intent(
+//                DELIVERED,
+//                Uri.fromParts("app", context.getPackageName(), Long.toString(new Date().getTime())),
+//                context,
+//                SMSBroadcastReceiver.class
+//            ).putExtra("id", idd + "");
+
+                PendingIntent sentPI      = PendingIntent.getBroadcast(context, i, iSent,      PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+                PendingIntent deliveredPI = PendingIntent.getBroadcast(context, i, iDelivered, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+
                 sentPendingIntents.add(i, sentPI);
                 deliveredPendingIntents.add(i, deliveredPI);
             }
 
-            final boolean[] sentReceiverRegistered = {true};
-            BroadcastReceiver sentReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context arg0, Intent arg1) {
-                    switch (getResultCode()) {
-                        case Activity.RESULT_OK:
-                            res[0] = new Result("sented status: SMS sented OK");
-                            break;
-                        default:
-                            res[0] = new Result("", "sented status: " + getConstantName(getResultCode()));
-                            break;
-                    }
-                    if (sentReceiverRegistered[0]) {
-                        context.unregisterReceiver(this);
-                        sentReceiverRegistered[0] = false;
-                    }
-                }
-            };
-            context.registerReceiver(sentReceiver, new IntentFilter(SENT), RECEIVER_NOT_EXPORTED);
+            BroadcastReceiver sentReceiver = new SMSBroadcastReceiver();
+            context.registerReceiver(sentReceiver, new IntentFilter(SENT), context.RECEIVER_NOT_EXPORTED);
 
-            //---when the SMS has been delivered---
-            final boolean[] deliveredReceiverRegistered = {true};
-            BroadcastReceiver deliveredReceiver = new BroadcastReceiver(){
-                @Override
-                public void onReceive(Context arg0, Intent arg1) {
-                    switch (getResultCode()) {
-                        case Activity.RESULT_OK:
-                            res[0] = new Result("delivered status: SMS delivered OK");
-                            break;
-                        default:
-                            res[0] = new Result("", "delivered status: " + getConstantName(getResultCode()) + " (SMS not delivered)");
-                            break;
-                    }
-                    if (deliveredReceiverRegistered[0]) {
-                        context.unregisterReceiver(this);
-                        deliveredReceiverRegistered[0] = false;
-                    }
-                }
-            };
-            context.registerReceiver(deliveredReceiver, new IntentFilter(DELIVERED), RECEIVER_NOT_EXPORTED);
+//            BroadcastReceiver sentReceiver2 = new BroadcastReceiver() {
+//                @Override
+//                public void onReceive(Context context, Intent intent) {
+//                    switch (getResultCode()) {
+//                        case Activity.RESULT_OK:
+//                            res[0] = new Result("sented status: SMS sented OK");
+//                            break;
+//                        default:
+//                            res[0] = new Result("", "sented status: " + getConstantName(getResultCode()));
+//                            break;
+//                    }
+//                }
+//            };
+//            context.registerReceiver(sentReceiver2, new IntentFilter(SENT), context.RECEIVER_NOT_EXPORTED);
+
+            BroadcastReceiver deliveredReceiver = new SMSBroadcastReceiver();
+            context.registerReceiver(deliveredReceiver, new IntentFilter(DELIVERED), context.RECEIVER_NOT_EXPORTED);
+
+//            BroadcastReceiver deliveredReceiver2 = new BroadcastReceiver() {
+//                @Override
+//                public void onReceive(Context context, Intent intent) {
+//                    switch (getResultCode()) {
+//                        case Activity.RESULT_OK:
+//                            res[0] = new Result("delivered status: SMS delivered OK");
+//                            break;
+//                        default:
+//                            res[0] = new Result("", "delivered status: " + getConstantName(getResultCode()) + " (SMS not delivered)");
+//                            break;
+//                    }
+//                }
+//            };
+//            context.registerReceiver(deliveredReceiver2, new IntentFilter(DELIVERED), context.RECEIVER_NOT_EXPORTED);
 
             smsManager.sendMultipartTextMessage(input.getString("number"), null, mSMSMessage, sentPendingIntents, deliveredPendingIntents);
 
-            try {
-                int miliSecWait = 200;
-                int miliSecMax = 1000 * 25;
-                while (miliSecMax > 0) {
-                    Thread.sleep(miliSecWait);
-                    miliSecMax = miliSecMax - miliSecWait;
-                    if (res[0] != null) {
-                        if (res[0].error != null)
-                             Log.e("~= jjPluginSMS", res[0].error);
-                        else Log.d("~= jjPluginSMS", res[0].body);
+            int miliSecSleep = 300;
+            int miliSecMax = 1000 * 18;
+            int miliSecDeliveredMin = 1000 * 5;
+            while (miliSecMax > 0) {
+                Thread.sleep(miliSecSleep);
+                miliSecMax = miliSecMax - miliSecSleep;
+                miliSecDeliveredMin = miliSecDeliveredMin - miliSecSleep;
+                try { res = results.get(idd); } catch (Exception ignored) {}
 
-                        return res[0];
-                    }
-                }
-            } catch (Exception ee) {
-                return new Result("", ee.toString());
-            } finally {
-                if (sentReceiverRegistered[0]) {
-                    context.unregisterReceiver(sentReceiver);
-                    sentReceiverRegistered[0] = false;
-                }
-                if (deliveredReceiverRegistered[0]) {
-                    context.unregisterReceiver(deliveredReceiver);
-                    deliveredReceiverRegistered[0] = false;
+                if (res != null && (res.status.equals(DELIVERED) || miliSecDeliveredMin < 0)) {
+                    if (res.error != null)
+                         Log.e("~= jjPluginSMS", res.error);
+                    else Log.d("~= jjPluginSMS", res.body);
+
+                    break;
                 }
             }
+            if (res == null) {
+                res = new Result("", "SMS status: 25s TimeOut for SMS sending has expired");
+            }
 
-            return new Result("", "jjPluginSMS status: 25s TimeOut for SMS sending has expired");
+//            context.unregisterReceiver(sentReceiver2);
+//            context.unregisterReceiver(deliveredReceiver2);
+            context.unregisterReceiver(sentReceiver);
+            context.unregisterReceiver(deliveredReceiver);
+
+            try { results.remove(idd); } catch (Exception ignored) {}
         } catch (Exception e) {
             Log.e("~= jjPluginSMS", "SMS error: " + e.toString());
-            return new Result("", "SMS error: " + e.toString());
+            res = new Result("", "SMS error: " + e.toString());
         }
+
+        return res;
     }
 
     /**
