@@ -4,11 +4,16 @@ package jjplugin.obsgrass.sms;
 // https://stackoverflow.com/questions/60017126/how-to-auto-run-react-native-app-on-device-starup
 // https://www.geeksforgeeks.org/how-to-generate-signed-aab-file-in-android-studio/
 
-import static java.util.Collections.singleton;
+//import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
+//import android.app.Notification;
+//import android.app.NotificationChannel;
+//import android.app.NotificationManager;
+//import androidx.core.app.NotificationCompat;
 
 import org.json.JSONObject;
 
 import androidx.annotation.Nullable;
+
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -23,12 +28,15 @@ import java.io.InputStreamReader;
 
 
 public class JJPluginSMSService extends Service {
+    public static String WAIT_TO_BROADCAST_RECEIVER = "WAIT_TO_BROADCAST_RECEIVER";
     Functions functions = new Functions(this);
     String intentFilterBroadcastString = null;
     String requestID = null;
+    String status = null;
     String requestIDLast = null;
     String serviceMethod = null;
     Boolean loging = true;
+    Boolean logingStarted = false;
 
     @Nullable
     @Override
@@ -38,7 +46,25 @@ public class JJPluginSMSService extends Service {
     public void onDestroy() {
         super.onDestroy();
         loging = false;
-        Log.d("~= jjPluginSMS", "service end");
+        Log.d("~= jjPluginSMS service", "onDestroy");
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.d("~= jjPluginSMS service", "onCreate");
+
+//        final NotificationManager manager = getSystemService(NotificationManager.class);
+//        if (manager.getNotificationChannel("jjPluginSMS") == null) {
+//            manager.createNotificationChannel(
+//                    new NotificationChannel("jjPluginSMS", "jjPluginSMS", IMPORTANCE_DEFAULT)
+//            );
+//        }
+//        startForeground(137, new NotificationCompat.Builder(this, "jjPluginSMS")
+//            .setSmallIcon(R.drawable.ic_launcher_foreground)
+//            .setContentTitle("jjPluginSMS")
+//            // .setContentText("Sending…")
+//            .build());
     }
 
     @SuppressLint("JavascriptInterface")
@@ -48,39 +74,50 @@ public class JJPluginSMSService extends Service {
         Bundle extras = intent.getExtras();
         if (extras != null && extras.getString("requestID") != null) {
             intentFilterBroadcastString = extras.getString("intentFilterBroadcastString");
-            startLog(intentFilterBroadcastString);
+            if (!logingStarted) startLog(intentFilterBroadcastString);
 
             serviceMethod = extras.getString("serviceMethod");
             requestID = extras.getString("requestID");
-            Log.d("~= jjPluginSMS", "requestID: " + requestID + "; input parsing...");
+            status = extras.getString("status", "");
+            Log.d("~= jjPluginSMS service", "requestID: " + requestID + ", status: " + status);
 
             // WARNING: Service can by called 2x in a row
-            if (requestID.equals(requestIDLast)) return Service.START_STICKY;
-            requestIDLast = requestID;
+            if ((requestID + status).equals(requestIDLast)) return Service.START_NOT_STICKY;
+            requestIDLast = requestID + status;
+
+            if (extras.getString("body") != null || extras.getString("error") != null) {
+                return sendResult(extras.getString("body"), extras.getString("error"));
+            }
 
             JSONObject input = null;
             try {
+                Log.d("~= jjPluginSMS service", "JSON input: " + extras.getString("input"));
                 input = new JSONObject(extras.getString("input"));
+                input.put("requestID", requestID);
+                input.put("intentFilterBroadcastString", intentFilterBroadcastString);
             } catch (Exception e) {
                 String err = "JSONObject parse error" + e.toString() + " of: " + extras.getString("input");
-                Log.e("~= JSONObject", err);
+                Log.e("~= jjPluginSMS service", err);
                 return sendResult("", err);
             }
 
             String msg = "intentFilterBroadcastString: " + intentFilterBroadcastString + "; ";
             try {
-                Log.d("~= jjPluginSMS", "method executing...");
+                Log.d("~= jjPluginSMS service", serviceMethod + " executing...");
                 Functions.Result result = functions.run(serviceMethod, input);
-                Log.d("~= jjPluginSMS", "result: " + result.body + ", error: " + result.error);
 
-                return sendResult(result);
+                if (!WAIT_TO_BROADCAST_RECEIVER.equals(result.status)) {
+                    Log.d("~= jjPluginSMS service", "result: " + result.body + ", error: " + result.error);
+                    return sendResult(result);
+                }
+                else Log.d("~= jjPluginSMS service", "result: WAIT_TO_BROADCAST_RECEIVER");
             } catch (Exception e) {
-                Log.e("~= PluginResult binding", " error: " + e.toString() + "; " + msg);
+                Log.e("~= jjPluginSMS service", e.toString());
                 return sendResult("", e.toString());
             }
         }
-        // by returning this we make sure the service is restarted if the system kills the service
-        return Service.START_STICKY;
+
+        return Service.START_NOT_STICKY;
     }
 
     private int sendResult(Functions.Result result) { return sendResult(result.body, result.error); }
@@ -95,12 +132,14 @@ public class JJPluginSMSService extends Service {
             intent2.putExtra("error", error);
 
         sendBroadcast(intent2);
+
         stopSelf();
 
         // by returning this we make sure the service is restarted if the system kills the service
-        return Service.START_STICKY;
+        return Service.START_NOT_STICKY;
     }
     public void startLog(String broadcastId) {
+        logingStarted = true;
         // https://stackoverflow.com/questions/12692103/read-logcat-programmatically-within-application
         new Thread(() -> {
             try {
@@ -129,7 +168,7 @@ public class JJPluginSMSService extends Service {
                 }
             }
             catch (Exception e) {
-                Log.e("~= jjPluginSMS", "MainActivity-logcatRead Error: " + e.getMessage());
+                Log.e("~= jjPluginSMS service", "logcatRead: " + e.getMessage());
             }
         }).start();
     }

@@ -16,6 +16,7 @@ module.exports = class SMS {
      * @param {{[key: string]: any}} [params] Options
      */
     async sendRequest(method, params = {}) {
+        // return this.options.mobileAppOpen('jjplugin.obsgrass.testsms', 'SMSService', 'MainActivity', [["serviceMethod", method], ["input", JSON.stringify(params)]]);
         return this.options.mobileAppOpen('jjplugin.obsgrass.sms', 'JJPluginSMSService', 'MainActivity', [["serviceMethod", method], ["input", JSON.stringify(params)]]);
     }
 
@@ -32,10 +33,10 @@ module.exports = class SMS {
     }
 
     /** @returns { Promise<string> } Message */
-    async promptToSentMessageContent(textInvitingUserToDictateMessage) { return (await this.options.speech(this.options.translate.messageContentQuestion, true)).text; }
+    async promptToSentMessageContent() { return (await this.options.speech(this.options.translate.messageContentQuestion, true)).text; }
 
     /** @returns { Promise<string> } Message */
-    async promptToRecipientName(textInvitingUserToDictateRecipientName) { return (await this.options.speech(this.options.translate.recipientNameQuestion, true)).text; }
+    async promptToRecipientName() { return (await this.options.speech(this.options.translate.recipientNameQuestion, true)).text; }
 
     /**
      * @param { string } smsNumber

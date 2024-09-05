@@ -11,6 +11,10 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher_foreground"
@@ -23,22 +27,19 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
         <service
             android:name=".JJPluginSMSService"
+            android:foregroundServiceType="shortService"
             android:enabled="true"
-            android:exported="true">
-            <intent-filter android:priority="2147483646">
-                <action android:name=".JJPluginSMSService" />
+            android:exported="true" />
 
-                <action android:name="PACKAGE_NAME.android.action.broadcast"/>
-                <action android:name="android.provider.Telephony.SMS_RECEIVED"></action>
-            </intent-filter>
-        </service>
+        <receiver
+            android:name=".SMSBroadcastReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

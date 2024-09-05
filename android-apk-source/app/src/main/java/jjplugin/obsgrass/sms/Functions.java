@@ -1,24 +1,17 @@
 package jjplugin.obsgrass.sms;
 
-import static android.content.Intent.FLAG_RECEIVER_FOREGROUND;
-
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
-import java.util.Date;
-import java.lang.reflect.Modifier;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 
-import android.content.ComponentName;
+import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.util.Log;
 
 import java.io.IOException;
@@ -31,7 +24,6 @@ import java.nio.file.Paths;
 
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.BroadcastReceiver;
 import android.provider.ContactsContract;
 import android.database.Cursor;
 import android.net.Uri;
@@ -45,16 +37,11 @@ import android.telephony.SmsManager;
 public class Functions {
     public Context context = null;
     private JSONObject data;
-    private int id = 0;
-    private static Map<Integer, Result> results = new HashMap<Integer, Result>();
 
     Functions(Context context) { this.context = context; }
 
-    public static void setResult(int id, Result res) { results.put(id, res); }
-
     public Result run(String methodName, JSONObject input) {
-        if (methodName.equals("test")) return test(input);
-        else if (methodName.equals("sendSMS")) return sendSMS(input);
+             if (methodName.equals("sendSMS")) return sendSMS(input);
         else if (methodName.equals("getNewSMSs")) return getNewSMSs(input);
         else if (methodName.equals("getContactByName")) return getContactByName(input);
         else if (methodName.equals("getContactByNumber")) return getContactByNumber(input);
@@ -125,7 +112,7 @@ public class Functions {
     public Result getContactByNumber(JSONObject input) {
         try {
             Contact contact = getContactByNumber((String) input.get("number"));
-            if (contact == null) return new Result(null);
+            if (contact == null) return new Result("");
             else return new Result("{\"number\": \"" + contact.number + "\", \"fullName\": \"" + contact.fullName + "\"}");
         } catch (JSONException e) {
             Log.e("~= jjPluginSMS", "getContactByNumber() error: " + e.toString());
@@ -138,10 +125,14 @@ public class Functions {
         Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
         if ((cur != null ? cur.getCount() : 0) > 0) {
             while (cur != null && cur.moveToNext()) {
-                String id = cur.getString(cur.getColumnIndex(ContactsContract.Contacts._ID));
-                String fullName = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                if (cur.getColumnIndex(ContactsContract.Contacts._ID) == -1) continue;
+                if (cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME) == -1) continue;
+                if (cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER) == -1) continue;
+                @SuppressLint("Range") String id        = cur.getString(cur.getColumnIndex(ContactsContract.Contacts._ID));
+                @SuppressLint("Range") String fullName  = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                int hasNumber = cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER);
 
-                if (cur.getInt(cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0) {
+                if (cur.getInt(hasNumber) > 0) {
                     Cursor pCur = cr.query(
                         ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                         null,
@@ -150,7 +141,8 @@ public class Functions {
                         null
                     );
                     while (pCur.moveToNext()) {
-                        String phoneNo = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                        if (pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER) == -1) continue;
+                        @SuppressLint("Range") String phoneNo = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
                         // Log.d("~=bbb", numberNorm(number) + " - " + numberNorm(phoneNo));
                         if (numberNorm(number).equals(numberNorm(phoneNo))) {
                             pCur.close();
@@ -184,53 +176,59 @@ public class Functions {
     static class Contact {
         public String fullName = null;
         public String number = null;
-        public Integer ratio = 0;
+        public int ratio = 0;
         Contact(String fullName, String number) {
             this.fullName = fullName;
             this.number = number;
         }
-        public void addRatio(Integer add) { ratio = ratio + add; }
+        public void addRatio(int add) { ratio = ratio + add; }
     }
 
     public Result getContactByName(JSONObject input) {
         try {
+//            return new Result("{\"number\": \"+42191571641\", \"fullName\": \"Filip Marcel\"}");
             Contact contact = getContactByName((String) input.get("name"));
-            if (contact == null) return new Result(null);
+            if (contact == null) return new Result("");
             else return new Result("{\"number\": \"" + contact.number + "\", \"fullName\": \"" + contact.fullName + "\"}");
-        } catch (JSONException e) {
-            Log.e("~= jjPluginSMS", "cgetContactByName() error: " + e.toString());
+        } catch (Exception e) {
+            Log.e("~= jjPluginSMS", "getContactByName() error: " + e.toString());
             return new Result("", "getContactByName() error: " + e.toString());
         }
     }
     public Contact getContactByName(String name) {
         ArrayList<Contact> contacts = new ArrayList<Contact>();
         List<String> names = Arrays.asList(nameNorm(name).split("\\s+"));
-        Integer fullRatio = nameNorm(name).replace(" ", "").length();
+        int fullRatio = nameNorm(name).replace(" ", "").length();
 
         // https://www.tutorialspoint.com/how-to-get-phone-number-from-content-provider-in-android
         ContentResolver cr = context.getContentResolver();
         Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
         if ((cur != null ? cur.getCount() : 0) > 0) {
             while (cur != null && cur.moveToNext()) {
-                String id = cur.getString(cur.getColumnIndex(ContactsContract.Contacts._ID));
-                String fullName = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                if (cur.getColumnIndex(ContactsContract.Contacts._ID) == -1) continue;
+                if (cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME) == -1) continue;
+                if (cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER) == -1) continue;
+                @SuppressLint("Range") String id        = cur.getString(cur.getColumnIndex(ContactsContract.Contacts._ID));
+                @SuppressLint("Range") String fullName  = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                int hasNumber = cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER);
 
-                if (cur.getInt(cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0) {
+                if (cur.getInt(hasNumber) > 0) {
                     Cursor pCur = cr.query(
-                        ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                        null,
-                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
-                        new String[]{id},
-                        null
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                            null,
+                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                            new String[]{id},
+                            null
                     );
                     while (pCur.moveToNext()) {
-                        String phoneNo = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                        if (pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER) == -1) continue;
+                        @SuppressLint("Range") String phoneNo = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
 
                         Contact contact = new Contact(fullName, numberNorm(phoneNo));
                         contacts.add(contact);
 
                         for (String name2 : names) {
-                            for (Integer i = name2.length(); i >= 3; i--) {
+                            for (int i = name2.length(); i >= 3; i--) {
                                 if (Pattern.compile(" " + name2.substring(0, i) + "|^" + name2.substring(0, i)).matcher(nameNorm(fullName)).find()) {
                                     contact.addRatio(i);
                                     break;
@@ -247,55 +245,22 @@ public class Functions {
         // https://stackoverflow.com/questions/19543862/how-can-i-sort-a-jsonarray-in-java
         Collections.sort( contacts, new Comparator<Contact>() {
             @Override
-            public int compare(Contact a, Contact b) {
-                return -a.ratio.compareTo(b.ratio);
-            }
+            public int compare(Contact a, Contact b) { return b.ratio - a.ratio; }
         });
 
         if (contacts.get(0).ratio > fullRatio * 0.7) {
             return contacts.get(0);
         } else return null;
+//        return new Contact("Filip Marcel", "+42191571641");
     }
 
 
-
-
-    public Result test(JSONObject input) {
-        try {
-            Log.d("~= test", input.getString("name") + " " + input.getString("number") + " " + input.getString("message"));
-            // sendSMS(new JSONObject("{\"number\":\"0915716413\",\"message\":\"Test 2\"}"));
-            getNewSMSs(new JSONObject("{\"setAsRread\":true}"));
-            Log.d("~= getContactByNumber", "Lea" + getContactByNumber(new JSONObject("{\"number\":\"421910260186\"}")));
-            Log.d("~= getContactByName", "421910260186" + getContactByName(new JSONObject("{\"name\":\"Lea\"}")));
-            return new Result("ok");
-        } catch (Exception e) {
-            Log.e("~= JSON input error", e.toString());
-            return new Result("", "~= JSON input error: " + e.toString());
-        } 
-    }
-
-    private String getConstantName(int value) {
-        for ( java.lang.reflect.Field f : Activity.class.getDeclaredFields()) {
-            int mod = f.getModifiers();
-            if (Modifier.isStatic(mod) && Modifier.isPublic(mod) && Modifier.isFinal(mod)) {
-                try {
-                    // Log.d(LOG_TAG, String.format("%s = %d%n", f.getName(), (int) f.get(null)));
-                    if((int) f.get(null) == value) {return f.getName();}
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return null;
-    }
 
     public static String SENT = "SMS_SENT";
     public static String DELIVERED = "SMS_DELIVERED";
     public Result sendSMS(JSONObject input) {
         Result res = null;
         try {
-            id++;
-            int idd = id;
             // https://mobiforge.com/design-development/sms-messaging-android
             // https://stackoverflow.com/questions/24673595/how-to-get-sms-sent-confirmation-for-each-contact-person-in-android/24845193#24845193
             // https://github.com/gonodono/sms-sender/tree/main
@@ -310,25 +275,17 @@ public class Functions {
                 Intent iSent = new Intent(SENT)
                         .setPackage(context.getPackageName())
                         .setClass(context, SMSBroadcastReceiver.class)
-                        .setFlags(FLAG_RECEIVER_FOREGROUND)
-                        .putExtra("id", idd + "");
+                        .setFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                        // .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra("requestID", input.getString("requestID"))
+                        .putExtra("intentFilterBroadcastString", input.getString("intentFilterBroadcastString"));
                 Intent iDelivered = new Intent(DELIVERED)
                         .setPackage(context.getPackageName())
                         .setClass(context, SMSBroadcastReceiver.class)
-                        .setFlags(FLAG_RECEIVER_FOREGROUND)
-                        .putExtra("id", idd + "");
-//            Intent iSent = new Intent(
-//                SENT,
-//                Uri.fromParts("app", context.getPackageName(), Long.toString(new Date().getTime()-1000)),
-//                context,
-//                SMSBroadcastReceiver.class
-//            ).putExtra("id", idd + "");
-//            Intent iDelivered = new Intent(
-//                DELIVERED,
-//                Uri.fromParts("app", context.getPackageName(), Long.toString(new Date().getTime())),
-//                context,
-//                SMSBroadcastReceiver.class
-//            ).putExtra("id", idd + "");
+                        .setFlags(Intent.FLAG_RECEIVER_FOREGROUND)
+                        // .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        .putExtra("requestID", input.getString("requestID"))
+                        .putExtra("intentFilterBroadcastString", input.getString("intentFilterBroadcastString"));
 
                 PendingIntent sentPI      = PendingIntent.getBroadcast(context, i, iSent,      PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
                 PendingIntent deliveredPI = PendingIntent.getBroadcast(context, i, iDelivered, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
@@ -337,71 +294,9 @@ public class Functions {
                 deliveredPendingIntents.add(i, deliveredPI);
             }
 
-            BroadcastReceiver sentReceiver = new SMSBroadcastReceiver();
-            context.registerReceiver(sentReceiver, new IntentFilter(SENT), context.RECEIVER_NOT_EXPORTED);
-
-//            BroadcastReceiver sentReceiver2 = new BroadcastReceiver() {
-//                @Override
-//                public void onReceive(Context context, Intent intent) {
-//                    switch (getResultCode()) {
-//                        case Activity.RESULT_OK:
-//                            res[0] = new Result("sented status: SMS sented OK");
-//                            break;
-//                        default:
-//                            res[0] = new Result("", "sented status: " + getConstantName(getResultCode()));
-//                            break;
-//                    }
-//                }
-//            };
-//            context.registerReceiver(sentReceiver2, new IntentFilter(SENT), context.RECEIVER_NOT_EXPORTED);
-
-            BroadcastReceiver deliveredReceiver = new SMSBroadcastReceiver();
-            context.registerReceiver(deliveredReceiver, new IntentFilter(DELIVERED), context.RECEIVER_NOT_EXPORTED);
-
-//            BroadcastReceiver deliveredReceiver2 = new BroadcastReceiver() {
-//                @Override
-//                public void onReceive(Context context, Intent intent) {
-//                    switch (getResultCode()) {
-//                        case Activity.RESULT_OK:
-//                            res[0] = new Result("delivered status: SMS delivered OK");
-//                            break;
-//                        default:
-//                            res[0] = new Result("", "delivered status: " + getConstantName(getResultCode()) + " (SMS not delivered)");
-//                            break;
-//                    }
-//                }
-//            };
-//            context.registerReceiver(deliveredReceiver2, new IntentFilter(DELIVERED), context.RECEIVER_NOT_EXPORTED);
-
             smsManager.sendMultipartTextMessage(input.getString("number"), null, mSMSMessage, sentPendingIntents, deliveredPendingIntents);
 
-            int miliSecSleep = 300;
-            int miliSecMax = 1000 * 18;
-            int miliSecDeliveredMin = 1000 * 5;
-            while (miliSecMax > 0) {
-                Thread.sleep(miliSecSleep);
-                miliSecMax = miliSecMax - miliSecSleep;
-                miliSecDeliveredMin = miliSecDeliveredMin - miliSecSleep;
-                try { res = results.get(idd); } catch (Exception ignored) {}
-
-                if (res != null && (res.status.equals(DELIVERED) || miliSecDeliveredMin < 0)) {
-                    if (res.error != null)
-                         Log.e("~= jjPluginSMS", res.error);
-                    else Log.d("~= jjPluginSMS", res.body);
-
-                    break;
-                }
-            }
-            if (res == null) {
-                res = new Result("", "SMS status: 25s TimeOut for SMS sending has expired");
-            }
-
-//            context.unregisterReceiver(sentReceiver2);
-//            context.unregisterReceiver(deliveredReceiver2);
-            context.unregisterReceiver(sentReceiver);
-            context.unregisterReceiver(deliveredReceiver);
-
-            try { results.remove(idd); } catch (Exception ignored) {}
+            res = new Result("", "", JJPluginSMSService.WAIT_TO_BROADCAST_RECEIVER);
         } catch (Exception e) {
             Log.e("~= jjPluginSMS", "SMS error: " + e.toString());
             res = new Result("", "SMS error: " + e.toString());

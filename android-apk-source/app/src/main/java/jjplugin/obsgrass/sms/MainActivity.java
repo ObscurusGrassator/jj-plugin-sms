@@ -12,19 +12,11 @@ import android.util.Log;
 import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity {
-    public static final String BROADCAST_CALLBAC = "JJPluginSMS";
-
-    Functions functions = new Functions(this);
-    String requestID = null;
-    String requestIDLast = null;
-    String serviceMethod = null;
-    JSONObject input = null;
-
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        Log.d("~= jjPluginSMS", "activity end");
+        Log.d("~= jjPluginSMS activity", "permissions end");
         finish();
     }
 

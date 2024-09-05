@@ -7,10 +7,10 @@ module.exports = class {
     async getContactByName(name) { return null; }
 
     /** @returns { Promise<string> } Message */
-    async promptToSentMessageContent(textInvitingUserToDictateMessage) { return ''; }
+    async promptToSentMessageContent() { return ''; }
 
     /** @returns { Promise<string> } Message */
-    async promptToRecipientName(textInvitingUserToDictateRecipientName) { return ''; }
+    async promptToRecipientName() { return ''; }
 
     /**
      * @param { string } smsNumber
