@@ -3,6 +3,8 @@ package jjplugin.obsgrass.sms;
 // https://robertohuertas.com/2019/06/29/android_foreground_services/
 // https://stackoverflow.com/questions/60017126/how-to-auto-run-react-native-app-on-device-starup
 // https://www.geeksforgeeks.org/how-to-generate-signed-aab-file-in-android-studio/
+// Java @MikeM solution: https://gist.github.com/gonodono/8802779b2119497b848b72803fbaeec1
+// Kotlin @MikeM solution: https://github.com/gonodono/sms-sender
 
 //import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
 //import android.app.Notification;
