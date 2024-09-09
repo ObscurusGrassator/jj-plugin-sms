@@ -48,6 +48,7 @@ module.exports = addPlugin(
             },
             android: {
                 packageName: 'jjplugin.obsgrass.sms',
+                minVersion: '1.2.0',
                 downloadUrl: 'https://github.com/ObscurusGrassator/jjplugin-sms/releases/download/1.2.0/JJPluginSMS_v1.2.0.apk'
             }
         }],
