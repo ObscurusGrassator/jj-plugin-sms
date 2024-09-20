@@ -1,8 +1,10 @@
 module.exports = class {
 
     /**
+     * If the contact does not exist, the function returns null.
+     * When you notify the user that this name was not found in the contacts, do not forget to read the name itself.
      * @param { string } name
-     * @returns { Promise<{number: string, fullName: string}> }
+     * @returns { Promise<{number: string, fullName: string} | null> }
      */
     async getContactByName(name) { return null; }
 

@@ -22,14 +22,10 @@ module.exports = class SMS {
 
     /**
      * @param { string } name
-     * @returns { Promise<{number: string, fullName: string}> }
+     * @returns { Promise<{number: string, fullName: string} | null> }
      */
     async getContactByName(name) {
-        let constact = await this.sendRequest('getContactByName', {name});
-
-        if (!constact) throw this.options.translate.realNameNotFound({name});
-
-        return constact;
+        return await this.sendRequest('getContactByName', {name});
     }
 
     /** @returns { Promise<string> } Message */
