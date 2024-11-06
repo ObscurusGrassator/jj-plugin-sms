@@ -15,11 +15,26 @@ module.exports = addPlugin(
     {
         // Konfig pluginu - čím univerzálnejšie zvolíte názvy klúčov, tým bude menšia pravdepodobnosť obťažovania
         //   použivateľa zadávaním duplicitných hodnôt naprieč ostatnými pluginmi ("facebook", "login", "password").
-        // Akékoľvek cillivé údaje (napr. heslá), si musia pluginy ukladať cez túto konfiguráciu,
+        // Akékoľvek cillivé údaje (napr. heslá), si musia pluginy ukladať len ručne cez túto konfiguráciu,
         //   a nesmú byť zasielané tretím stranám, a ak danú službu sami neponúkajú, tak ani samotným autorom pluginu.
         facebook: {
-            propertyWithoutValue: { type: 'string' },               // aplikácia vyzve používateľa na doplnenie hodnoty
-            propertyWithValue: { type: 'boolean', value: false },   // prednastavená hodnota
+            propertyArray: [{                                         // používateľ môže pridávať a mazať položky
+                name: { type: 'string' },                             // povinná vlastnosť pre prvok poľa
+                propertyWithoutValue: { type: 'string' },             // používateľ bude vyzvaný na doplnenie hodnoty
+                propertyWithValue: { type: 'string', value: 'aaa' },  // prednastavená hodnota
+            }],
+
+            stringProp:         { type: 'string', value: 'test', pattern: '[a-z]+' },
+            optionMultyProp:    { type: 'string', value: ['aaa', 'ccc'], options: ['aaa', 'bbb', 'ccc'] },
+            optionSingleProp:   { type: 'string', value: 'aaa', options: ['aaa', 'bbb', 'ccc'] },
+            optionWithPreview:  { type: 'string', value: 'aaa', options: {aaa: 'Pretty Aaa', bbb: 'Pretty Bbb'} },
+            optionVariableProp: { type: 'string', value: [], options: 'myOptions' },
+            myOptions: { type: 'optionsList', options: ['xxx', 'yyy'] },       // používateľ môže možnosti editovať
+
+            numberProp: { type: 'number', value: 50, min: 0, max: 100, step: 10, desc: '[%]' },
+            booleanProp: { type: 'boolean', value: true },
+            button: { type: 'button', functionName: 'setStatus', parameters: ['aaa', 123] }, // funkcia zo scriptInitializer
+            link: { type: 'link', value: 'https://www.google.com' },
         },
     },
     {   // špecifikácia podporovaných OS and SPU
@@ -70,6 +85,12 @@ module.exports = class {
      * @returns { Promise<void> }
      */
     async sendMessage(smsNumber, message) {}
+
+    /**
+     * @param { myOptions } status - typ myOptions je definovaný v plugin configu ( addPlugin({...myOptions:...}) )
+     * @returns { Promise<void> }
+     */
+    async setStatus(status) {}
 ...
 ```
 
@@ -97,6 +118,11 @@ module.exports = class FacebookChat {
         } else {
             await this.options.speech('Príkaz bol zrušený.');
         }
+    }
+
+    async setStatus(status) {
+        ctx.config.facebook.optionVariableProp.value = stauts;
+        await this.options.speech('Nastavený status: ' + status);
     }
 ...
 ```

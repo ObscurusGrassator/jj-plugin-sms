@@ -30,7 +30,7 @@ module.exports = addPlugin({
         },
         sendingMessage: {
             "sk-SK": "Odosielam SMS...",
-            "en-US": "I am sending the SMS..."
+            "en-US": "I am sending the SMS ..."
         },
         sendingFailed: {
             "sk-SK": "Odosielanie SMS zlihalo.",
@@ -38,7 +38,7 @@ module.exports = addPlugin({
         },
         sendingTimeout: {
             "sk-SK": "Niesom si istý, že ...",
-            "en-US": "I'm not sure that..."
+            "en-US": "I'm not sure that ..."
         },
     }),
 }, {

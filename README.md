@@ -15,12 +15,27 @@ module.exports = addPlugin(
     {
         // Pluginu config - the more universal you choose the key names, the less likely it is to annoy 
         //   the user by inserting duplicate values ​​across other plugins ("facebook", "login", "password").
-        // Any sensitive data (e.g. passwords) must be stored by plugins through this configuration, 
+        // Any sensitive data (e.g. passwords) must be stored by plugins only manually through this configuration, 
         //   and must not be sent to third parties, and if they do not offer the service themselves,
         //   not even to the authors of the plugin.
         serviceName: {
-            propertyWithoutValue: { type: 'string' },               // app prompts the user to fill in the value
-            propertyWithValue: { type: 'boolean', value: false },   // default value
+            propertyArray: [{                                         // user can add and delete items
+                name: { type: 'string' },                             // required property for an array element
+                propertyWithoutValue: { type: 'string' },             // user will be prompted to fill in the value
+                propertyWithValue: { type: 'string', value: 'aaa' },  // default value
+            }],
+
+            stringProp:         { type: 'string', value: 'test', pattern: '[a-z]+' },
+            optionMultyProp:    { type: 'string', value: ['aaa', 'ccc'], options: ['aaa', 'bbb', 'ccc'] },
+            optionSingleProp:   { type: 'string', value: 'aaa', options: ['aaa', 'bbb', 'ccc'] },
+            optionWithPreview:  { type: 'string', value: 'aaa', options: {aaa: 'Pretty Aaa', bbb: 'Pretty Bbb'} },
+            optionVariableProp: { type: 'string', value: [], options: 'myOptions' },
+            myOptions: { type: 'optionsList', options: ['xxx', 'yyy'] },    // user can editing options values
+
+            numberProp: { type: 'number', value: 50, min: 0, max: 100, step: 10, desc: '[%]' },
+            booleanProp: { type: 'boolean', value: true },
+            button: { type: 'button', functionName: 'setStatus', parameters: ['aaa', 123] }, // function from scriptInitializer
+            link: { type: 'link', value: 'https://www.google.com' },
         },
     },
     {   // specify the supported OS and CPU
@@ -71,6 +86,12 @@ module.exports = class {
      * @returns { Promise<void> }
      */
     async sendMessage(smsNumber, message) {}
+
+    /**
+     * @param { myOptions } status - type myOptions is defined in plugin config ( addPlugin({...myOptions:...}) )
+     * @returns { Promise<void> }
+     */
+    async setStatus(status) {}
 ...
 ```
 
@@ -99,10 +120,15 @@ module.exports = class FacebookChat {
             await this.options.speech('The command has been cancelled.');
         }
     }
+
+    async setStatus(status) {
+        ctx.config.facebook.optionVariableProp.value = stauts;
+        await this.options.speech('Status set to: ' + status);
+    }
 ...
 ```
 
-**WARNING: getSummaryAccept(summary)** Do not forget to ask the user for additional consent for each command performing any modification by summarizing the individual details of his request, so that the user can make sure that the system has correctly recognized his request before editing, because some modifications can mean mental or even financial inconvenience for individual users.
+**POZOR: getSummaryAccept(summary)** Do not forget to ask the user for additional consent for each command performing any modification by summarizing the individual details of his request, so that the user can make sure that the system has correctly recognized his request before editing, because some modifications can mean mental or even financial inconvenience for individual users.
 
 ## Sample plugins
 
