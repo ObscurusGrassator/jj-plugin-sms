@@ -2,8 +2,11 @@
 try { var { Linking } = require('react-native'); } catch (err) {}
 
 /** @typedef { import('./interfaceForAI.js') } InterfaceForAI */
-/** @implements { InterfaceForAI } */
+/** @implements {InterfaceForAI} */
 module.exports = class SMS {
+    /** @type {{ number: string, fullName: string }} */
+    lastChatContact;
+
     lastMessages = '';
 
     constructor(options) {
@@ -22,17 +25,14 @@ module.exports = class SMS {
 
     /**
      * @param { string } name
-     * @returns { Promise<{number: string, fullName: string} | null> }
+     * @returns { Promise<{ number: string, fullName: string } | null> }
      */
     async getContactByName(name) {
         return await this.sendRequest('getContactByName', {name});
     }
 
-    /** @returns { Promise<string> } Message */
     async promptToSentMessageContent() { return (await this.options.speech(this.options.translate.messageContentQuestion, true)).text; }
-
-    /** @returns { Promise<string> } Message */
-    async promptToRecipientName() { return (await this.options.speech(this.options.translate.recipientNameQuestion, true)).text; }
+    async promptToRecipientName()      { return (await this.options.speech(this.options.translate.recipientNameQuestion, true)).text; }
 
     /**
      * @param { string } smsNumber
@@ -46,6 +46,7 @@ module.exports = class SMS {
         if (await this.options.getSummaryAccept(this.options.translate.canSendMessage({realName: fullName || smsNumber, message}))) {
             this.options.speech(this.options.translate.sendingMessage);
             try {
+                this.lastChatContact = {number: smsNumber, fullName};
                 await this.sendRequest('sendSMS', {number: smsNumber, message});
             } catch (err) {
                 if (err.toString().toLocaleLowerCase().indexOf('timeout') > -1) {
@@ -64,7 +65,6 @@ module.exports = class SMS {
     }
 
     /**
-     * Returns not readed messages array by sender mame from SMS
      * @param { Object } [options]
      * @param { boolean } [options.makrAsReaded = true]
      * @param { 'inbox' | 'sent' | 'draft' | 'outbox' | 'failed' | 'queued' | 'all' } [options.box = 'inbox']
@@ -73,7 +73,7 @@ module.exports = class SMS {
      * @param { string } [options.findMessageByRegex]
      * @param { boolean } [options.onlyReaded = false]
      * @param { string } [options.smsFromNumber]
-     * @returns { Promise<{[number: string]: {messages: string[], timestamp: number, number: string, fullName: string}}> }
+     * @returns { Promise<{[number: string]: { messages: string[], timestamp: number, number: string, fullName: string }}> }
      */
     async getMessages(options = {}) {
         // @ts-ignore
@@ -91,10 +91,16 @@ module.exports = class SMS {
         // @ts-ignore
         if (options.smsFromNumber) options.address = options.smsFromNumber;
 
+        /** @type {{[number: string]: { messages: string[], timestamp: number, number: string, fullName: string }}} */
         let result = await this.sendRequest('getNewSMSs', options);
 
         for (let i in result) {
             if (options.makrAsReaded) Linking.openURL(`sms:${result[i].number}`);
+        }
+
+        if (Object.keys(result).length === 1) {
+            let { messages, timestamp, ...lastChatContact } = Object.values(result)[0];
+            this.lastChatContact = lastChatContact;
         }
 
         return result;

@@ -1,4 +1,6 @@
-module.exports = class {
+module.exports = class InterfaceForAI {
+    /** @type {{ number: string, fullName: string }} */
+    lastChatContact;
 
     /**
      * If the contact does not exist, the function returns null.

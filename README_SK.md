@@ -44,12 +44,13 @@ module.exports = addPlugin(
     {
         // scriptInitializer() sa spúšta pri spustení aplikácie pred spustením pluginu,
         //   a vracia metódy (implementujúce interfaceForAI.js typy), ktoré môže ChatGPT využívať
-        scriptInitializer: async ctx => {
-            return new FacebookChat({...ctx, browserTab: await ctx.browserPluginStart('https://facebook.com/messages/t')});
+        scriptInitializer: async context => {
+            return new FacebookChat({...context, browserTab: await context.browserTabStart('https://facebook.com/messages/t')});
         },
         translations: /** @type { const } */ ({
             // Anglická verzia je povinná. Ostatné jazyky sa z nej preložia automaticky.
-            hello: {'en-US': 'Hello ${name}!'}
+            hello: {'en-US': 'Hello ${name}!'}  // context.translate.hello({name: 'Peter'})
+            bay: {'en-US': 'Bay'}               // context.translate.bay
         }),
     },
     {
@@ -67,18 +68,47 @@ module.exports = addPlugin(
             }
         }],
         // ďaľšie nepovinné funkcie
-        scriptDestructor: async ctx => {
-            await ctx.methodsForAI.logout();
-            ctx.methodsForAI.options.browserTab.destructor();
+        scriptAfterAwaking, scriptAfterAsleep,
+        scriptAfterBrowserBackButton, scriptAfterDeviceDisplayOffChange,
+        scriptAfterBrowserResolutionChange: async (context, displayWidth, displayHeight, displayStatusbarHeight) => {},
+        scriptDestructor: async context => {
+            await context.methodsForAI.logout();
+            context.methodsForAI.options.browserTab.destructor();
         },
     }
 );
 ```
 
+`context` vstupujúci do funkcií:
+```js
+/**
+ * @typedef { {
+ *      config: Config,
+ *      configSave: () => Promise<void>,
+ *      methodsForAI: ReturnType<scriptInitializer>,
+ *      translate: {[key in keyof translations]: translations[key][language]
+ *          | (templateArgs: {[k: string]: string}) => translations[key][language]},
+ *      getSummaryAccept: (commandForAccept: string) => Promise<boolean>,
+ *      speech: (text: string, listenReply: boolean, options: {speakDisable?: boolean})
+ *          => Promise<{ text: string, bool: Boolean }>,
+ *      browserTabStart: (url: string, adaptableResolution: boolean, onlyInBackground: boolean)
+ *          => Promise<BrowserPuppeteer>,
+ *      mobileAppOpen: (
+ *          packageName: string,
+ *          serviceName: `${string}Service`,
+ *          permissionsRequestActivity: `${string}Activity` | undefined,
+ *          inputs: [string, string | number | boolean][],
+ *          options: { timeOutSec: number }
+ *      ) => Promise,
+ * } } Ctx
+ */
+```
+[BrowserPuppeteer](https://www.npmjs.com/package/jjplugin?activeTab=code) -> processComunication.js
+
 **src/interfaceForAI.js**  
 Toto je povinný súbor, obsahujúci typy a interface metód, ktoré môže ChatGPT využívať. Aby ich ChatGPT vedel použiť, musia byť dostatočne intuitívne a zdokumentované cez JSDoc.
 ```js
-module.exports = class {
+module.exports = class InterfaceForAI {
     /**
      * @param { string } smsNumber
      * @param { string } message
@@ -86,8 +116,12 @@ module.exports = class {
      */
     async sendMessage(smsNumber, message) {}
 
+    // tento typedef "myOptions" bude nahradený v runtime ( napr. za { 'xxx' | 'yyy' } )
+    //   podĺa definície v plugin configu ( addPlugin({... myOptions: { type: 'optionsList', ...})
+    /** @typedef { string } myOptions */
+
     /**
-     * @param { myOptions } status - typ myOptions je definovaný v plugin configu ( addPlugin({...myOptions:...}) )
+     * @param { myOptions } status )
      * @returns { Promise<void> }
      */
     async setStatus(status) {}
@@ -121,13 +155,16 @@ module.exports = class FacebookChat {
     }
 
     async setStatus(status) {
-        ctx.config.facebook.optionVariableProp.value = stauts;
+        this.options.config.facebook.optionVariableProp.value = stauts;
+        this.options.configSave();
         await this.options.speech('Nastavený status: ' + status);
     }
 ...
 ```
 
-**POZOR: getSummaryAccept(summary)** Nezabudnite sa pre každú operáciu vykonávajúcu akúkoľvek úpravu spýtať používateľa na dodatočný súhlas za pomoci sumarizácie jednotlivých detailov jeho požiadavky, aby sa používateľ mohol pred úpravou uistiť, že systém rozpoznal správne jeho požiadavku, pretože niektoré úpravy môžu pre jednotlivých používateľov znamenať mentálne alebo dokonca finančné nepriemnosti.
+**POZOR: getSummaryAccept(summary)** Nezabudnite sa pre každú operáciu vykonávajúcu akúkoľvek úpravu spýtať používateľa na dodatočný súhlas za pomoci sumarizácie jednotlivých detailov jeho požiadavky, aby sa používateľ mohol pred úpravou uistiť, že systém rozpoznal správne jeho požiadavku, pretože niektoré úpravy môžu pre jednotlivých používateľov znamenať mentálne alebo dokonca finančné nepriemnosti.  
+
+**POZOR: browserTabStart(url)** Browser nadmerne spotrebúva batériu, preto sa v telefóne automaticky zavrie, ak s nim používateľ nepracuje 30 sekúnd. Odporúčam obmedziť používanie browsera, a po ukončení práce s ním ho zatvárať.  
 
 ## Ukážkové pluginy
 
@@ -139,9 +176,9 @@ module.exports = class FacebookChat {
 
 **Príklad komunikácia JavaScriptu pluginu s doinštalovanou Java background service mobilnou aplikáciou:**
 ```js
-ctx.mobileAppOpen('jjplugin.obsgrass.sms', 'JJPluginSMSService', 'MainActivity', [["paramA", paramA], ["paramB", paramB]]);
+context.mobileAppOpen('jjplugin.obsgrass.sms', 'JJPluginSMSService', 'MainActivity', [["paramA", paramA], ["paramB", paramB]]);
 ```
-Ak aplikácia vyžaduje na svoj beh nejaké permissions, vytvorte aktivitu, kde si tieto oprávnenia vyžiadate. V opačnom prípade je tretí parameter v ctx.mobileAppOpen() nepovinný.  
+Ak aplikácia vyžaduje na svoj beh nejaké permissions, vytvorte aktivitu, kde si tieto oprávnenia vyžiadate. V opačnom prípade je tretí parameter v context.mobileAppOpen() nepovinný.  
 Ak chcete v debug móde čítať logy svojho pluginu v JJAssistentovi, nastavte zasielanie logov cez intent.  
 Do service môžete odoslať cez dvojrozmerné pole ľubovolné String extras argumenty. Okrem nich sa odosielajú aj systémové argumenty "intentFilterBroadcastString" a jedinečné "requestID", vďaka ktorému sa správne spáruje intent odpoveď, ktorá musí obsahovať "requestID" a buď "result" alebo "error":
 ```Java

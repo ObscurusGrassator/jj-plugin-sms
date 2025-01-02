@@ -45,12 +45,13 @@ module.exports = addPlugin(
     {
         // scriptInitializer() is run when the application starts before the plugin starts,
         //   and returns methods (implementing interfaceForAI.js types) that ChatGPT can use
-        scriptInitializer: async ctx => {
-            return new FacebookChat({...ctx, browserTab: await ctx.browserPluginStart('https://facebook.com/messages/t')});
+        scriptInitializer: async context => {
+            return new FacebookChat({...context, browserTab: await context.browserTabStart('https://facebook.com/messages/t')});
         },
         translations: /** @type { const } */ ({
             // The English version is mandatory. Other languages ​​are automatically translated from it.
-            hello: {'en-US': 'Hello ${name}!'}
+            hello: {'en-US': 'Hello ${name}!'}  // context.translate.hello({name: 'Peter'})
+            bay: {'en-US': 'Bay'}               // context.translate.bay
         }),
     },
     {
@@ -68,18 +69,47 @@ module.exports = addPlugin(
             }
         }],
         // other optional funcions
-        scriptDestructor: async ctx => {
-            await ctx.methodsForAI.logout();
-            ctx.methodsForAI.options.browserTab.destructor();
+        scriptAfterAwaking, scriptAfterAsleep,
+        scriptAfterBrowserBackButton, scriptAfterDeviceDisplayOffChange,
+        scriptAfterBrowserResolutionChange: async (context, displayWidth, displayHeight, displayStatusbarHeight) => {},
+        scriptDestructor: async context => {
+            await context.methodsForAI.logout();
+            context.methodsForAI.options.browserTab.destructor();
         },
     }
 );
 ```
 
+`context` that enters functions:
+```js
+/**
+ * @typedef { {
+ *      config: Config,
+ *      configSave: () => Promise<void>,
+ *      methodsForAI: ReturnType<scriptInitializer>,
+ *      translate: {[key in keyof translations]: translations[key][language]
+ *          | (templateArgs: {[k: string]: string}) => translations[key][language]},
+ *      getSummaryAccept: (commandForAccept: string) => Promise<boolean>,
+ *      speech: (text: string, listenReply: boolean, options: {speakDisable?: boolean})
+ *          => Promise<{ text: string, bool: Boolean }>,
+ *      browserTabStart: (url: string, adaptableResolution: boolean, onlyInBackground: boolean)
+ *          => Promise<BrowserPuppeteer>,
+ *      mobileAppOpen: (
+ *          packageName: string,
+ *          serviceName: `${string}Service`,
+ *          permissionsRequestActivity: `${string}Activity` | undefined,
+ *          inputs: [string, string | number | boolean][],
+ *          options: { timeOutSec: number }
+ *      ) => Promise,
+ * } } Ctx
+ */
+```
+[BrowserPuppeteer](https://www.npmjs.com/package/jjplugin?activeTab=code) -> processComunication.js
+
 **src/interfaceForAI.js**  
 This is a mandatory file, containing the types and interface methods that ChatGPT can use. In order for ChatGPT to be able to use them, they must be sufficiently intuitive and documented via JSDoc.
 ```js
-module.exports = class {
+module.exports = class InterfaceForAI {
     /**
      * @param { string } smsNumber
      * @param { string } message
@@ -87,8 +117,12 @@ module.exports = class {
      */
     async sendMessage(smsNumber, message) {}
 
+    // this "myOptions" typedef will be replaced at runtime ( example by { 'xxx' | 'yyy' } )
+    //   according to the definition in plugin config ( addPlugin({... myOptions: { type: 'optionsList', ...})
+    /** @typedef { string } myOptions */
+
     /**
-     * @param { myOptions } status - type myOptions is defined in plugin config ( addPlugin({...myOptions:...}) )
+     * @param { myOptions } status )
      * @returns { Promise<void> }
      */
     async setStatus(status) {}
@@ -122,13 +156,16 @@ module.exports = class FacebookChat {
     }
 
     async setStatus(status) {
-        ctx.config.facebook.optionVariableProp.value = stauts;
+        this.options.config.facebook.optionVariableProp.value = stauts;
+        this.options.configSave();
         await this.options.speech('Status set to: ' + status);
     }
 ...
 ```
 
-**POZOR: getSummaryAccept(summary)** Do not forget to ask the user for additional consent for each command performing any modification by summarizing the individual details of his request, so that the user can make sure that the system has correctly recognized his request before editing, because some modifications can mean mental or even financial inconvenience for individual users.
+**POZOR: getSummaryAccept(summary)** Do not forget to ask the user for additional consent for each command performing any modification by summarizing the individual details of his request, so that the user can make sure that the system has correctly recognized his request before editing, because some modifications can mean mental or even financial inconvenience for individual users.  
+
+**POZOR: browserTabStart(url)** The browser consumes too much battery, so it closes automatically on the phone if the user does not work with it for 30 seconds. I recommend minimizing the use of the browser and closing it after finishing work with it.  
 
 ## Sample plugins
 
@@ -140,9 +177,9 @@ module.exports = class FacebookChat {
 
 **Example of JavaScript plugin communication with an installed Java background service of Android application:**
 ```js
-ctx.mobileAppOpen('jjplugin.obsgrass.sms', 'JJPluginSMSService', 'MainActivity', [["paramA", paramA], ["paramB", paramB]]);
+context.mobileAppOpen('jjplugin.obsgrass.sms', 'JJPluginSMSService', 'MainActivity', [["paramA", paramA], ["paramB", paramB]]);
 ```
-If the application requires some permissions to run, create an activity to request these permissions. Otherwise, the third parameter in ctx.mobileAppOpen() is optional.  
+If the application requires some permissions to run, create an activity to request these permissions. Otherwise, the third parameter in context.mobileAppOpen() is optional.  
 If you want to read the logs of your plugin in JJAssistent in debug mode, set the sending of logs via intent.  
 You can send arbitrary user String extras arguments to the service via a two-dimensional array. In addition to these, the system arguments "intentFilterBroadcastString" and the unique "requestID" are also sent, thanks to which the intent response is correctly matched. The response must contain "requestID" and either "result" or "error":
 ```Java
